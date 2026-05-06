@@ -2,7 +2,6 @@
 'use client';
 
 import { useCartStore } from '@/shared/store/useCartStore';
-import { removeFromCart } from '@/shared/api/services/cart';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { useTransition } from 'react';
@@ -19,10 +18,9 @@ export function CartItemDeleteButton({ productId, token }: CartItemDeleteButtonP
     const handleDelete = () => {
         startTransition(async () => {
             try {
-                await removeFromCart(token, productId);
-                removeItem(productId);
+                await removeItem(token, productId);
                 toast.success('Товар удален из корзины');
-            } catch (error) {
+            } catch {
                 toast.error('Ошибка при удалении товара');
             }
         });
@@ -30,7 +28,7 @@ export function CartItemDeleteButton({ productId, token }: CartItemDeleteButtonP
 
     return (
         <button
-            className={`
+            className="
                 absolute top-1.5 right-1.5 h-7 w-7 p-0 flex items-center justify-center
                 bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm
                 hover:bg-red-50 hover:border-red-200 hover:text-red-600
@@ -40,14 +38,12 @@ export function CartItemDeleteButton({ productId, token }: CartItemDeleteButtonP
                 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent
                 disabled:hover:border-gray-200 disabled:hover:text-gray-400
                 rounded-lg group
-            `}
+            "
             onClick={handleDelete}
             disabled={isPending}
             aria-label="Удалить товар"
         >
-            <X
-                className={`h-3.5 w-3.5 transition-all duration-200`}
-            />
+            <X className="h-3.5 w-3.5 transition-all duration-200" />
         </button>
     );
 }

@@ -3,18 +3,13 @@
 
 import { useEffect, useMemo } from 'react';
 import { useCartStore, type CartResponse } from '@/shared/store/useCartStore';
+import type { User } from '@/shared/api/services/auth';
 import CartItemsList from '@/entities/cart/ui/CartItemsList';
 import CartSummary from '@/entities/cart/ui/CartSummary';
 import HeaderNav from '@/widgets/layout/HeaderNav';
 
-interface UserWithToken {
+interface UserWithToken extends User {
     token: string;
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    isActive: boolean;
-    emailConfirmed: boolean;
 }
 
 interface CartPageClientProps {

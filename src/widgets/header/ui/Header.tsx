@@ -1,16 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { HeaderAuthButton } from './HeaderAuthButton';
+import { HeaderSearch } from './HeaderSearch';
+import type { User } from '@/shared/api/services/auth';
 import s from './Header.module.css';
-
-export type User = {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    isActive: boolean;
-    emailConfirmed: boolean;
-};
 
 interface HeaderProps {
     user: User | null;
@@ -31,6 +24,7 @@ export function Header({ user }: HeaderProps) {
                         каталог
                     </Link>
                 </nav>
+                <HeaderSearch />
                 <div className="flex justify-end items-center">
                     {/*<nav className={s.nav}>*/}
                     {/*    <Link href="/about" className="hover:underline">*/}

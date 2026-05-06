@@ -1,17 +1,14 @@
 import { z } from 'zod';
 
-
-const passwordRegex = /^(?=.*[a-zа-яё])(?=.*[A-ZА-ЯЁ])(?=.*\d)[A-Za-zА-Яа-яЁё\d]+$/;
-
-// Обязательное наличие хотя бы одной строчной, одной прописной буквы и одной цифры
-
 export const registerSchema = z.object({
     email: z.string().email('Некорректный email'),
-    password: z.string().min(6, 'Пароль должен содержать минимум 6 символов'),
+    password: z.string()
+        .min(8, 'Пароль должен содержать минимум 8 символов')
+        .regex(/\d/, 'Пароль должен содержать хотя бы одну цифру'),
     companyName: z.string().min(2, 'Название компании должно содержать минимум 2 символа'),
     inn: z.string()
         .regex(/^\d{10}$/, 'ИНН должен содержать ровно 10 цифр')
-        .transform(val => val.replace(/\D/g, '')), // убираем все нецифры
+        .transform((value) => value.replace(/\D/g, '')),
     confirm: z.string(),
     consent: z.boolean(),
 }).refine((data) => data.password === data.confirm, {

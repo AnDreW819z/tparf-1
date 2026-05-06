@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { fetchMeServer, type User } from '@/shared/api/services/auth';
+import { fetchMe, type User } from '@/shared/api/services/auth';
 
 type UserState = {
     user: User | null;

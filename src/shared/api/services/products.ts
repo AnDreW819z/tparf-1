@@ -66,35 +66,53 @@ export type ProductsResponse = {
 export type ProductFilterParams = {
     page?: number;
     pageSize?: number;
+    categoryIds?: string[];
     brandIds?: string[];
     minPrice?: number;
     maxPrice?: number;
     searchQuery?: string;
 };
 
+function buildProductQueryParams(params?: ProductFilterParams) {
+    const { page = 1, pageSize = 20, categoryIds, brandIds, minPrice, maxPrice, searchQuery } = params ?? {};
+    const queryParams = new URLSearchParams();
+    queryParams.set('Page', String(page));
+    queryParams.set('PageSize', String(pageSize));
+    if (categoryIds && categoryIds.length > 0) {
+        for (const categoryId of categoryIds) {
+            queryParams.append('CategoryIds', categoryId);
+        }
+    }
+    if (brandIds && brandIds.length > 0) {
+        for (const brandId of brandIds) {
+            queryParams.append('BrandIds', brandId);
+        }
+    }
+    if (minPrice !== undefined) {
+        queryParams.set('MinPrice', String(minPrice));
+    }
+    if (maxPrice !== undefined) {
+        queryParams.set('MaxPrice', String(maxPrice));
+    }
+    if (searchQuery) {
+        queryParams.set('SearchQuery', searchQuery);
+    }
+    return queryParams;
+}
+
+export async function fetchProducts(params?: ProductFilterParams) {
+    const { data } = await api.get<ProductsResponse>('products', {
+        params: buildProductQueryParams(params),
+    });
+    return data;
+}
+
 export async function fetchProductsByCategoryId(
     categoryId: string,
     params?: ProductFilterParams
 ) {
-    const { page = 1, pageSize = 20, brandIds, minPrice, maxPrice, searchQuery } = params ?? {};
-    const queryParams: Record<string, string | number> = {
-        Page: page,
-        PageSize: pageSize,
-    };
-    if (brandIds && brandIds.length > 0) {
-        queryParams.BrandIds = brandIds.join(',');
-    }
-    if (minPrice !== undefined) {
-        queryParams.MinPrice = minPrice;
-    }
-    if (maxPrice !== undefined) {
-        queryParams.MaxPrice = maxPrice;
-    }
-    if (searchQuery) {
-        queryParams.SearchQuery = searchQuery;
-    }
     const { data } = await api.get<ProductsResponse>(`categories/${categoryId}/products`, {
-        params: queryParams,
+        params: buildProductQueryParams(params),
     });
     return data;
 }

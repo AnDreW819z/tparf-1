@@ -1,20 +1,18 @@
 // src/entities/product/ui/ProductInfoClient.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useEffect, useState, useTransition } from 'react';
 import { Minus, Plus, ShoppingCart, Edit3 } from 'lucide-react';
-import { useCartStore } from '@/shared/store/useCartStore';
-import { addToCart, updateCartItem, removeFromCart, getCart } from '@/shared/api/services/cart';
-import { createOneClickOrder } from '@/shared/api/services/orders'; // ✅ Импорт
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { useCartStore } from '@/shared/store/useCartStore';
+import { addToCart, getCart } from '@/shared/api/services/cart';
+import { createOneClickOrder } from '@/shared/api/services/orders';
 import { AddToCartModal } from '@/entities/cart/ui/AddToCartModal';
 import { QuickQuantityModal } from '@/entities/cart/ui/QuickQuantityModal';
-import { OneClickBuyModal } from '@/entities/cart/ui/OneClickBuyModal'; // ✅ Новый модал
-import { useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-
+import { OneClickBuyModal } from '@/entities/cart/ui/OneClickBuyModal';
 import type { CartInfo } from '@/shared/api/services/product';
+import type { User } from '@/shared/api/services/auth';
 
 interface ProductInfoClientProps {
     productId: string;
@@ -24,44 +22,40 @@ interface ProductInfoClientProps {
     currencyCode: string;
     brandName?: string;
     cartInfo: CartInfo;
-    user: any;
+    user: (User & { token?: string }) | null;
 }
 
 export function ProductInfoClient({
-                                      productId,
-                                      name,
-                                      sku,
-                                      price,
-                                      currencyCode,
-                                      brandName,
-                                      cartInfo: initialCartInfo,
-                                      user
-                                  }: ProductInfoClientProps) {
+    productId,
+    name,
+    sku,
+    price,
+    currencyCode,
+    brandName,
+    cartInfo: initialCartInfo,
+    user,
+}: ProductInfoClientProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [showAddModal, setShowAddModal] = useState(false);
     const [showQuickModal, setShowQuickModal] = useState(false);
-    const [showOneClickModal, setShowOneClickModal] = useState(false); // ✅ Новый модал
+    const [showOneClickModal, setShowOneClickModal] = useState(false);
     const token = user?.token;
 
-    const cart = useCartStore(state => state.cart);
-    const { updateQuantity, removeItem, setCart } = useCartStore();
+    const cart = useCartStore((state) => state.cart);
+    const updateQuantity = useCartStore((state) => state.updateQuantity);
+    const removeItem = useCartStore((state) => state.removeItem);
+    const setCart = useCartStore((state) => state.setCart);
 
-    const currentCartItem = cart?.items.find(item => item.productId === productId);
+    const currentCartItem = cart?.items.find((item) => item.productId === productId);
     const isInCart = !!currentCartItem;
     const currentQuantity = currentCartItem?.quantity || 0;
 
     const [localCartInfo, setLocalCartInfo] = useState<CartInfo>(initialCartInfo);
 
     useEffect(() => {
-        if (token && initialCartInfo?.inCart) {
-            updateQuantity(productId, initialCartInfo.quantity);
-        }
-    }, [token, initialCartInfo, productId, updateQuantity]);
-
-    useEffect(() => {
         if (cart) {
-            const item = cart.items.find(item => item.productId === productId);
+            const item = cart.items.find((cartItem) => cartItem.productId === productId);
             if (item) {
                 setLocalCartInfo({ inCart: true, quantity: item.quantity });
             } else {
@@ -98,7 +92,7 @@ export function ProductInfoClient({
         });
     };
 
-    const handleQuantityChange = async (newQuantity: number) => {
+    const handleQuantityChange = (newQuantity: number) => {
         if (!token) {
             redirectToLogin();
             return;
@@ -107,12 +101,10 @@ export function ProductInfoClient({
         startTransition(async () => {
             try {
                 if (newQuantity <= 0) {
-                    await removeFromCart(token, productId);
-                    removeItem(productId);
+                    await removeItem(token, productId);
                     toast.success('Товар удален из корзины');
                 } else {
-                    await updateCartItem(token, productId, newQuantity);
-                    updateQuantity(productId, newQuantity);
+                    await updateQuantity(token, productId, newQuantity);
                     toast.success('Количество обновлено');
                 }
 
@@ -130,7 +122,6 @@ export function ProductInfoClient({
         setShowQuickModal(false);
     };
 
-    // ✅ Логика "Купить в 1 клик"
     const handleOneClickBuy = (quantity: number) => {
         if (!token) {
             redirectToLogin();
@@ -139,32 +130,24 @@ export function ProductInfoClient({
 
         startTransition(async () => {
             try {
-                // ✅ Создаем заказ в 1 клик
-                const newOrder = await createOneClickOrder(token, [{
-                    productId,
-                    quantity
-                }]);
-
+                const newOrder = await createOneClickOrder(token, [{ productId, quantity }]);
                 toast.success(`Заказ №${newOrder.orderNumber} успешно создан!`);
                 setShowOneClickModal(false);
-
-                // ✅ Перенаправляем на страницу заказов
                 router.push('/orders');
-            } catch (error: any) {
+            } catch (error) {
                 console.error('Ошибка создания заказа:', error);
-                toast.error(error.response?.data?.message || 'Ошибка при создании заказа');
+                toast.error('Ошибка при создании заказа');
             }
         });
     };
 
-    // Товар НЕ в корзине
     if (!isCurrentlyInCart) {
         return (
             <>
                 <div className="space-y-3">
                     <h1 className="text-2xl font-semibold">{name}</h1>
                     <div className="text-sm text-gray-600">
-                        Бренд: <span className="font-medium">{brandName ?? '—'}</span>
+                        Бренд: <span className="font-medium">{brandName ?? '-'}</span>
                     </div>
                     <div className="text-sm text-gray-600">
                         Артикул: <span className="font-medium">{sku}</span>
@@ -208,13 +191,12 @@ export function ProductInfoClient({
         );
     }
 
-    // Товар В корзине
     return (
         <>
             <div className="space-y-3">
                 <h1 className="text-2xl font-semibold">{name}</h1>
                 <div className="text-sm text-gray-600">
-                    Бренд: <span className="font-medium">{brandName ?? '—'}</span>
+                    Бренд: <span className="font-medium">{brandName ?? '-'}</span>
                 </div>
                 <div className="text-sm text-gray-600">
                     Артикул: <span className="font-medium">{sku}</span>

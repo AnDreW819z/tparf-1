@@ -7,10 +7,39 @@ type Props = Omit<ImageProps, 'src'> & {
     fallbackSrc?: string;
 };
 
+const ALLOWED_REMOTE_HOSTS = new Set([
+    'petropump.ru',
+    'fotobank.eltreco.ru',
+    'gate.skatpower.ru',
+    'sts-rf.ru',
+    'kedrweld.ru',
+    'cdn.ibot.by',
+]);
+
+function resolveSafeImageSrc(src: string | undefined, fallbackSrc: string) {
+    if (!src) {
+        return fallbackSrc;
+    }
+
+    if (src.startsWith('/')) {
+        return src;
+    }
+
+    try {
+        const url = new URL(src);
+        const isAllowedProtocol = url.protocol === 'http:' || url.protocol === 'https:';
+        const isAllowedHost = ALLOWED_REMOTE_HOSTS.has(url.hostname);
+
+        return isAllowedProtocol && isAllowedHost ? src : fallbackSrc;
+    } catch {
+        return fallbackSrc;
+    }
+}
+
 export function ImageWithFallback({ src, fallbackSrc = '/placeholder.png', ...rest }: Props) {
-    const [imgSrc, setImgSrc] = useState(src || fallbackSrc);
+    const [imgSrc, setImgSrc] = useState(resolveSafeImageSrc(src, fallbackSrc));
     useEffect(() => {
-        setImgSrc(src || fallbackSrc);
+        setImgSrc(resolveSafeImageSrc(src, fallbackSrc));
     }, [src, fallbackSrc]);
 
     return (

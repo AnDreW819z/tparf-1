@@ -9,37 +9,56 @@ import { CategoryGrid } from '../../../src/entities/category/ui/CategoryGrid';
 import { ProductFilters } from '../../../src/widgets/product-filters/ui/ProductFilters';
 import { ProductGrid } from '../../../src/entities/product/ui/ProductGrid';
 import { Pagination } from '../../../src/widgets/pagination/ui/Pagination';
+import type { CategoryNode } from '../../../src/entities/category/model/types';
+import type { ProductItem } from '../../../src/shared/api/services/products';
 
 export const revalidate = 300;
 
 type CatalogPageProps = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ Page?: string; PageSize?: string; BrandIds?: string; MinPrice?: string; MaxPrice?: string }>;
+  searchParams: Promise<{
+    Page?: string;
+    PageSize?: string;
+    BrandIds?: string | string[];
+    MinPrice?: string;
+    MaxPrice?: string;
+    SearchQuery?: string;
+  }>;
 };
+
+function readArrayParam(value?: string | string[]) {
+  if (!value) return [];
+  const values = Array.isArray(value) ? value : [value];
+  return values.flatMap((item) => item.split(',')).filter(Boolean);
+}
+
+function isResponseError(error: unknown): error is { response?: { status?: number } } {
+  return typeof error === 'object' && error !== null && 'response' in error;
+}
 
 export default async function CategoryByIdPage({
   params,
   searchParams,
 }: CatalogPageProps) {
   const { id } = await params;
-  const { Page, PageSize, BrandIds, MinPrice, MaxPrice } = await searchParams;
+  const { Page, PageSize, BrandIds, MinPrice, MaxPrice, SearchQuery } = await searchParams;
 
-  let node;
+  let node: CategoryNode;
   try {
     node = await fetchCategoryById(id);
-  } catch (e: any) {
-    if (e?.response?.status === 404) notFound();
+  } catch (e: unknown) {
+    if (isResponseError(e) && e.response?.status === 404) notFound();
     throw e;
   }
 
   // ✅ Breadcrumbs
-  const crumbs = node.pathItems.map((p: any) => ({
+  const crumbs = node.pathItems.map((p) => ({
     id: p.id,
     title: p.name,
   }));
 
   // ✅ Подкатегории
-  const categoryItems = node.children.map((child: any) => ({
+  const categoryItems = node.children.map((child) => ({
     id: child.id,
     name: child.name,
     childrenCount: child.children?.length ?? undefined,
@@ -54,7 +73,7 @@ export default async function CategoryByIdPage({
   > | null = null;
 
   if (node.level >= 1) {
-    const brandIds = BrandIds?.split(',').filter(Boolean) ?? [];
+    const brandIds = readArrayParam(BrandIds);
     const minPrice = MinPrice ? Number(MinPrice) : undefined;
     const maxPrice = MaxPrice ? Number(MaxPrice) : undefined;
 
@@ -64,16 +83,17 @@ export default async function CategoryByIdPage({
       brandIds: brandIds.length > 0 ? brandIds : undefined,
       minPrice,
       maxPrice,
+      searchQuery: SearchQuery,
     });
   }
 
   const productItems =
-    productsData?.items.map((p: any) => ({
+    productsData?.items.map((p: ProductItem) => ({
       id: p.id,
       name: p.name,
       price: p.price,
       currencyCode: p.currencyCode,
-      imageUrl: p.images?.find((i: any) => i.isMain)?.imageUrl,
+      imageUrl: p.images?.find((i) => i.isMain)?.imageUrl,
       brandName: p.brandName,
     })) ?? [];
 
@@ -122,6 +142,12 @@ export default async function CategoryByIdPage({
                     page={page}
                     pageSize={pageSize}
                     totalCount={totalCount}
+                    preserve={{
+                      BrandIds: readArrayParam(BrandIds).join(','),
+                      MinPrice,
+                      MaxPrice,
+                      SearchQuery,
+                    }}
                   />
                 </div>
               </>

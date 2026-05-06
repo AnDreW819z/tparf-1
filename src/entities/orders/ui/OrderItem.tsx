@@ -5,7 +5,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronUp, Package } from 'lucide-react';
 import type { Order, OrderItem as OrderItemType } from '@/shared/api/services/orders';
-import { formatDate } from '@/shared/lib/utils';
 
 interface OrderItemProps {
     order: Order;
@@ -16,7 +15,7 @@ const STATUS_LABELS: Record<number, string> = {
     2: 'Обработка',
     3: 'Отправлено',
     4: 'Доставлено',
-    5: 'Отменено'
+    5: 'Отменено',
 };
 
 const STATUS_COLORS: Record<number, string> = {
@@ -24,31 +23,32 @@ const STATUS_COLORS: Record<number, string> = {
     2: 'bg-blue-100 text-blue-800 border-blue-200',
     3: 'bg-indigo-100 text-indigo-800 border-indigo-200',
     4: 'bg-green-100 text-green-800 border-green-200',
-    5: 'bg-red-100 text-red-800 border-red-200'
+    5: 'bg-red-100 text-red-800 border-red-200',
 };
-
 
 export default function OrderItem({ order }: OrderItemProps) {
     const [isExpanded, setIsExpanded] = useState(false);
 
-    const formatPrice = (amount: number) => {
-        return new Intl.NumberFormat('ru-RU').format(amount);
-    };
+    const formatPrice = (amount: number) => new Intl.NumberFormat('ru-RU').format(amount);
 
     const statusLabel = STATUS_LABELS[order.status];
     const statusClass = STATUS_COLORS[order.status];
 
     return (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            {/* ✅ Закрытая верстка */}
-            <div className="p-6 hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+            <div
+                className="p-6 hover:bg-gray-50 transition-colors cursor-pointer"
+                onClick={() => setIsExpanded(!isExpanded)}
+            >
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4 flex-1 min-w-0">
                         <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
                             <Package className="h-6 w-6 text-gray-500" />
                         </div>
                         <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-gray-500 truncate">Заказ #{order.orderNumber}</p>
+                            <p className="text-sm font-medium text-gray-500 truncate">
+                                Заказ #{order.orderNumber}
+                            </p>
                             <p className="text-2xl font-bold text-gray-900">
                                 {formatPrice(order.totalAmount)} ₽
                             </p>
@@ -69,13 +69,15 @@ export default function OrderItem({ order }: OrderItemProps) {
                 </div>
             </div>
 
-            {/* ✅ Развернутая верстка */}
             {isExpanded && (
                 <div className="border-t border-gray-100 bg-gray-50">
                     <div className="p-6">
                         <div className="grid gap-4 md:grid-cols-3">
                             {order.items.map((item: OrderItemType) => (
-                                <div key={item.id} className="flex items-center gap-3 p-4 bg-white rounded-xl border hover:shadow-sm transition-all">
+                                <div
+                                    key={item.id}
+                                    className="flex items-center gap-3 p-4 bg-white rounded-xl border hover:shadow-sm transition-all"
+                                >
                                     {item.images[0] && (
                                         <img
                                             src={item.images[0].imageUrl}
@@ -97,7 +99,7 @@ export default function OrderItem({ order }: OrderItemProps) {
                                             {formatPrice(item.totalPrice)} ₽
                                         </p>
                                         <p className="text-sm text-gray-500">
-                                            {item.quantity} × {formatPrice(item.price)} ₽
+                                            {item.quantity} x {formatPrice(item.unitPrice)} ₽
                                         </p>
                                     </div>
                                 </div>

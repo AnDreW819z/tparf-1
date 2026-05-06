@@ -1,0 +1,75 @@
+import { ProductGrid } from '@/entities/product/ui/ProductGrid';
+import { fetchProducts, type ProductItem } from '@/shared/api/services/products';
+import { Pagination } from '@/widgets/pagination/ui/Pagination';
+
+export const revalidate = 300;
+
+export const metadata = { title: 'Поиск товаров' };
+
+type SearchPageProps = {
+    searchParams: Promise<{
+        SearchQuery?: string;
+        Page?: string;
+        PageSize?: string;
+    }>;
+};
+
+export default async function SearchPage({ searchParams }: SearchPageProps) {
+    const { SearchQuery, Page, PageSize } = await searchParams;
+    const searchQuery = SearchQuery?.trim() ?? '';
+    const page = Number(Page ?? 1);
+    const pageSize = Number(PageSize ?? 20);
+
+    const productsData = searchQuery
+        ? await fetchProducts({
+            searchQuery,
+            page,
+            pageSize,
+        })
+        : null;
+
+    const productItems =
+        productsData?.items.map((product: ProductItem) => ({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            currencyCode: product.currencyCode,
+            imageUrl: product.images?.find((image) => image.isMain)?.imageUrl,
+            brandName: product.brandName,
+        })) ?? [];
+
+    return (
+        <section className="mx-auto max-w-7xl px-4 py-8">
+            <h1 className="mb-2 text-2xl font-semibold">Результаты поиска</h1>
+
+            {searchQuery ? (
+                <p className="mb-6 text-sm text-gray-500">
+                    По запросу «{searchQuery}» найдено {productsData?.totalCount ?? 0} товаров
+                </p>
+            ) : (
+                <p className="mb-6 text-sm text-gray-500">
+                    Введите название товара в строку поиска.
+                </p>
+            )}
+
+            {searchQuery && productItems.length > 0 && (
+                <>
+                    <ProductGrid items={productItems} />
+                    <Pagination
+                        basePath="/search"
+                        page={page}
+                        pageSize={pageSize}
+                        totalCount={productsData?.totalCount ?? 0}
+                        preserve={{ SearchQuery: searchQuery }}
+                    />
+                </>
+            )}
+
+            {searchQuery && productItems.length === 0 && (
+                <div className="rounded-lg border border-gray-200 bg-white px-6 py-12 text-center text-gray-500">
+                    Ничего не найдено. Попробуйте изменить запрос.
+                </div>
+            )}
+        </section>
+    );
+}
