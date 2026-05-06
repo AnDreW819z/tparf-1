@@ -9,22 +9,16 @@ import { register, login as loginApi } from '@/shared/api/services/auth';
 export type RegisterState = { ok: boolean; errors?: Record<string, string>; message?: string };
 export type LoginState = { ok: boolean; errors?: Record<string, string>; message?: string };
 
-function isZodError(error: unknown): error is ZodError {
-    return !!error && typeof error === 'object' && 'issues' in (error as any) && Array.isArray((error as any).issues);
+function isZodError(e: unknown): e is ZodError {
+    return !!e && typeof e === 'object' && 'issues' in (e as any) && Array.isArray((e as any).issues);
 }
-
-function extractErrors(error: ZodError) {
+function extractErrors(err: ZodError) {
     const errors: Record<string, string> = {};
-
-    for (const issue of error.issues) {
-        const firstPathItem = Array.isArray(issue.path) ? issue.path[0] : undefined;
-        const key = typeof firstPathItem === 'string' ? firstPathItem : 'form';
-
-        if (!errors[key]) {
-            errors[key] = issue.message;
-        }
+    for (const i of err.issues) {
+        const first = Array.isArray(i.path) ? i.path[0] : undefined;
+        const key = typeof first === 'string' ? (first as unknown as string) : 'form';
+        if (!errors[key]) errors[key] = i.message;
     }
-
     return errors;
 }
 
@@ -93,11 +87,12 @@ export async function registerAction(_: RegisterState, formData: FormData): Prom
             consent: formData.get('consent') === 'on',
         });
 
-        const response = await register({
+        // Вызов API регистрации с новыми полями
+        const res = await register({
             email: parsed.email,
             password: parsed.password,
-            companyName: parsed.companyName,
-            inn: Number(parsed.inn),
+            companyName: parsed.companyName,  // новое поле
+            inn: parsed.inn,                  // новое поле
         });
 
         const cookieStore = await cookies();
@@ -150,18 +145,16 @@ export async function loginAction(_: LoginState, formData: FormData): Promise<Lo
             secure,
             maxAge: 60 * 60 * 24 * 7,
         });
-    } catch (error: unknown) {
-        if (isZodError(error)) {
-            return { ok: false, errors: extractErrors(error) };
+    } catch (err: any) {
+        if (err?.response) {
+            const text =
+                typeof err.response.data === 'string'
+                    ? err.response.data
+                    : err.response.data?.message || '';
+            return { ok: false, message: text || 'Не удалось выполнить вход. Проверьте email и пароль.' };
         }
-
-        return {
-            ok: false,
-            message: extractApiMessage(
-                error,
-                'Не удалось выполнить вход. Проверьте email и пароль.'
-            ),
-        };
+        if (isZodError(err)) return { ok: false, errors: extractErrors(err) };
+        return { ok: false, message: 'Ошибка сети или сервера. Повторите попытку.' };
     }
 
     redirect('/cart');

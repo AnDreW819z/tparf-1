@@ -1,3 +1,4 @@
+// app/layout.tsx
 import { getUserFromCookie } from '@/shared/server/auth';
 import { ClientRoot } from './ClientRoot';
 import { ReactQueryProvider } from '@/app/providers';
@@ -7,16 +8,16 @@ import './globals.css';
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
     const user = await getUserFromCookie();
+    const token = user?.token || null; // ✅ Получаем token
+
     return (
         <html lang="ru">
         <body>
-        <ReactQueryProvider>
-            <ClientRoot>
-                <Header user={user} />
-                <main className="min-h-[70vh]">{children}</main>
-                <Footer />
-            </ClientRoot>
-        </ReactQueryProvider>
+        <ClientRoot>
+            <Header user={user} />
+            <main className="min-h-[70vh]">{children}</main>
+            <Footer />
+        </ClientRoot>
         </body>
         </html>
     );

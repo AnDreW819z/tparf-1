@@ -4,10 +4,12 @@
 import HeaderNav from '@/widgets/layout/HeaderNav';
 import OrdersList from '@/entities/orders/ui/OrdersList';
 import Link from 'next/link';
+import type { OrdersResponse } from '@/shared/api/services/orders';
+import type { UserWithToken } from '@/shared/api/services/auth';
 
 interface OrdersPageClientProps {
-    orders: any; // OrdersResponse
-    user: any;
+    orders: OrdersResponse; // ✅ Правильный тип
+    user: UserWithToken;   // ✅ Правильный тип
 }
 
 export default function OrdersPageClient({ orders, user }: OrdersPageClientProps) {
@@ -18,7 +20,7 @@ export default function OrdersPageClient({ orders, user }: OrdersPageClientProps
                 <div className="flex items-center justify-between mb-8">
                     <h1 className="text-3xl font-bold text-gray-900">Мои заказы</h1>
                     <span className="text-sm text-gray-500">
-                        Всего заказов: {orders.totalCount}
+                        Всего заказов: {orders.totalCount} {/* ✅ Теперь работает */}
                     </span>
                 </div>
 

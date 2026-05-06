@@ -6,7 +6,7 @@ type UserState = {
     loading: boolean;
     error: string | null;
     setUser: (user: User | null) => void;
-    fetchUser: () => Promise<void>;
+    fetchUser: (token: string) => Promise<void>; // ✅ Добавить token в параметры
 };
 
 export const useUserStore = create<UserState>((set) => ({
@@ -14,13 +14,15 @@ export const useUserStore = create<UserState>((set) => ({
     loading: false,
     error: null,
     setUser: (user) => set({ user }),
-    fetchUser: async () => {
+    fetchUser: async (token: string) => { // ✅ Принимаем token
         set({ loading: true, error: null });
         try {
-            const user = await fetchMe();
+            // ✅ Используем fetchMeServer с token
+            const user = await fetchMeServer(token);
             set({ user, loading: false });
-        } catch (error: any) {
-            set({ user: null, loading: false, error: error.message || 'Ошибка загрузки пользователя' });
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Ошибка загрузки пользователя';
+            set({ user: null, loading: false, error: errorMessage });
         }
     },
 }));

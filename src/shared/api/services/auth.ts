@@ -67,11 +67,6 @@ export type User = {
     brandIds: string[];
 };
 
-export async function fetchMe(): Promise<User> {
-    const { data } = await api.get<User>('/api/auth/me');
-    return data;
-}
-
 export async function fetchMeServer(token: string): Promise<User> {
     const { data } = await api.get<User>('auth/me', {
         headers: { Authorization: `Bearer ${token}` },

@@ -22,7 +22,7 @@ interface ProductInfoClientProps {
     currencyCode: string;
     brandName?: string;
     cartInfo: CartInfo;
-    user: (User & { token?: string }) | null;
+    user: any;
 }
 
 export function ProductInfoClient({
@@ -134,7 +134,7 @@ export function ProductInfoClient({
                 toast.success(`Заказ №${newOrder.orderNumber} успешно создан!`);
                 setShowOneClickModal(false);
                 router.push('/orders');
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Ошибка создания заказа:', error);
                 toast.error('Ошибка при создании заказа');
             }

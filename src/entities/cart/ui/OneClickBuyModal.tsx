@@ -48,7 +48,7 @@ export function OneClickBuyModal({
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') handleSubmit(e as any);
+        if (e.key === 'Enter') handleSubmit(e as unknown);
         if (e.key === 'Escape') onClose();
     };
 

@@ -29,7 +29,13 @@ export function CategoryCard({ id, name, href, subtitle, imageUrl, className }: 
             )}
         >
             <div className="relative w-full aspect-[16/9] overflow-hidden rounded border border-[#DDDDDD] bg-white">
-                <Image src={src} alt={name} fill className="object-contain" sizes="(min-width:1280px) 25vw, (min-width:1024px) 33vw, 50vw" />
+                <Image
+                    src={src}
+                    alt={name}
+                    fill
+                    className="object-contain"
+                    sizes="(min-width:1280px) 25vw, (min-width:1024px) 33vw, 50vw"
+                />
             </div>
             <div>
                 <div className="text-base font-semibold text-[#767676]">{name}</div>

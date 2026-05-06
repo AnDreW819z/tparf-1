@@ -1,14 +1,15 @@
 'use client';
 import Link from 'next/link';
-import { useFormState } from 'react-dom';
+import { useActionState } from 'react'; // ✅ Импорт из react
+import { useState } from 'react';
 import { registerAction, type RegisterState } from '../actions';
 import { Button } from '@/shared/ui/button/ui/Button';
-import { useState } from 'react';
 
 const initialState: RegisterState = { ok: false };
 
 export function RegisterForm() {
-    const [state, formAction] = useFormState(registerAction, initialState);
+    // ✅ useActionState вместо useFormState
+    const [state, formAction] = useActionState(registerAction, initialState);
     const [consentChecked, setConsentChecked] = useState(false);
 
     return (

@@ -1,4 +1,4 @@
-import { LoginForm } from '@/features/auth/ui/LoginForm';
+import { LoginForm } from '../../../src/features/auth/ui/LoginForm';
 
 export const metadata = { title: 'Авторизация' };
 

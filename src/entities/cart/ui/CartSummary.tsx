@@ -31,7 +31,7 @@ export default function CartSummary({ totalAmount, currencyCode = 'RUB', token }
 
                 // ✅ 3. Перенаправляем на страницу заказов
                 window.location.href = `/orders`;
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.error('Ошибка создания заказа:', error);
                 toast.error(error.response?.data?.message || 'Ошибка при создании заказа');
             }
@@ -72,7 +72,7 @@ export default function CartSummary({ totalAmount, currencyCode = 'RUB', token }
             <div className="mt-6 pt-6 border-t border-gray-100">
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                     <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                    После оформления заказа вы сможете отслеживать его статус в разделе "Мои заказы"
+                    <span>Сумма заказа &quot;{totalAmount.toLocaleString('ru-RU')}&quot; {currencyCode}</span>
                 </div>
             </div>
         </div>

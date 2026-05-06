@@ -1,16 +1,13 @@
 // app/catalog/[id]/page.tsx
 
 import { notFound } from 'next/navigation';
-import { fetchCategoryById } from '../../../src/shared/api/services/categories';
-import { fetchProductsByCategoryId } from '../../../src/shared/api/services/products';
-import { fetchAllBrands } from '../../../src/shared/api/services/brands';
-import { Breadcrumbs } from '../../../src/widgets/breadcrumbs/ui/Breadcrumbs';
-import { CategoryGrid } from '../../../src/entities/category/ui/CategoryGrid';
-import { ProductFilters } from '../../../src/widgets/product-filters/ui/ProductFilters';
-import { ProductGrid } from '../../../src/entities/product/ui/ProductGrid';
-import { Pagination } from '../../../src/widgets/pagination/ui/Pagination';
-import type { CategoryNode } from '../../../src/entities/category/model/types';
-import type { ProductItem } from '../../../src/shared/api/services/products';
+import { fetchCategoryById } from '@/shared/api/services/categories';
+import { fetchProductsByCategoryId } from '@/shared/api/services/products';
+import { Breadcrumbs } from '@/widgets/breadcrumbs/ui/Breadcrumbs';
+import { CategoryGrid } from '@/entities/category/ui/CategoryGrid';
+import { ProductFilters } from '@/widgets/product-filters/ui/ProductFilters';
+import { ProductGrid } from '@/entities/product/ui/ProductGrid';
+import { Pagination } from '@/widgets/pagination/ui/Pagination';
 
 export const revalidate = 300;
 
@@ -37,83 +34,55 @@ function isResponseError(error: unknown): error is { response?: { status?: numbe
 }
 
 export default async function CategoryByIdPage({
-  params,
-  searchParams,
-}: CatalogPageProps) {
-  const { id } = await params;
-  const { Page, PageSize, BrandIds, MinPrice, MaxPrice, SearchQuery } = await searchParams;
+                                                   params,
+                                                   searchParams,
+                                               }: {
+    params: { id: string };
+    searchParams: { Page?: string; PageSize?: string };
+}) {
+    let node;
+    try {
 
-  let node: CategoryNode;
-  try {
-    node = await fetchCategoryById(id);
-  } catch (e: unknown) {
-    if (isResponseError(e) && e.response?.status === 404) notFound();
-    throw e;
-  }
+        node = await fetchCategoryById(params.id);
+    } catch (e: any) {
+        if (e?.response?.status === 404) notFound();
+        throw e;
+    }
 
-  // ✅ Breadcrumbs
-  const crumbs = node.pathItems.map((p) => ({
-    id: p.id,
-    title: p.name,
-  }));
+    const crumbs = node.pathItems.map((p) => ({ id: p.id, title: p.name }));
 
-  // ✅ Подкатегории
-  const categoryItems = node.children.map((child) => ({
-    id: child.id,
-    name: child.name,
-    childrenCount: child.children?.length ?? undefined,
-    imageUrl: child.logoUrl ?? null,
-  }));
 
-  const page = Number(Page ?? 1);
-  const pageSize = Number(PageSize ?? 20);
+    const categoryItems = node.children.map((child) => ({
+        id: child.id,
+        name: child.name,
+        childrenCount: child.children?.length ?? undefined,
+        imageUrl: child.logoUrl ?? null, // добавлено
+    }));
 
-  let productsData: Awaited<
-    ReturnType<typeof fetchProductsByCategoryId>
-  > | null = null;
+    // Читаем пагинацию из URL
+    const page = Number(searchParams.Page ?? 1);
+    const pageSize = Number(searchParams.PageSize ?? 20);
 
-  if (node.level >= 1) {
-    const brandIds = readArrayParam(BrandIds);
-    const minPrice = MinPrice ? Number(MinPrice) : undefined;
-    const maxPrice = MaxPrice ? Number(MaxPrice) : undefined;
+    // Товары с уровня 1 и выше
+    let productsData = null as Awaited<ReturnType<typeof fetchProductsByCategoryId>> | null;
+    if (node.level >= 1) {
+        productsData = await fetchProductsByCategoryId(node.id, { page, pageSize });
+    }
+    const productItems =
+        productsData?.items.map((p) => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            currencyCode: p.currencyCode,
+            imageUrl: p.images?.find((i) => i.isMain)?.imageUrl ,
+            brandName: p.brandName,
+        })) ?? [];
 
-    productsData = await fetchProductsByCategoryId(node.id, {
-      page,
-      pageSize,
-      brandIds: brandIds.length > 0 ? brandIds : undefined,
-      minPrice,
-      maxPrice,
-      searchQuery: SearchQuery,
-    });
-  }
-
-  const productItems =
-    productsData?.items.map((p: ProductItem) => ({
-      id: p.id,
-      name: p.name,
-      price: p.price,
-      currencyCode: p.currencyCode,
-      imageUrl: p.images?.find((i) => i.isMain)?.imageUrl,
-      brandName: p.brandName,
-    })) ?? [];
-
-  const totalCount = productsData?.totalCount ?? 0;
-
-  // ✅ Загружаем бренды на сервере (SSR), чтобы клиент не делал запрос через nginx
-  let brands: Awaited<ReturnType<typeof fetchAllBrands>> = [];
-  try {
-    brands = await fetchAllBrands();
-  } catch {
-    // игнорируем ошибку загрузки брендов
-  }
-
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
-      {/* ✅ Breadcrumbs */}
-      <Breadcrumbs crumbs={crumbs} />
-
-      {/* ✅ Заголовок категории */}
-      <h1 className="text-2xl font-semibold mb-6">{node.name}</h1>
+    const totalCount = productsData?.totalCount ?? 0;
+    return (
+        <section className="mx-auto max-w-7xl px-4 py-8">
+            <Breadcrumbs crumbs={crumbs} className="mb-6" />
+            <h1 className="text-2xl font-semibold mb-4">{node.name}</h1>
 
       {/* ✅ Подкатегории */}
       {categoryItems.length > 0 && (
@@ -123,43 +92,29 @@ export default async function CategoryByIdPage({
         </div>
       )}
 
-      {/* ✅ Список товаров (только для уровней >= 1) */}
-      {node.level >= 1 && (
-        <div className="flex gap-8">
-          {/* Фильтры — левая колонка */}
-          <aside className="hidden lg:block w-64 shrink-0">
-            <ProductFilters brands={brands} />
-          </aside>
+            {node.level >= 1 && (
+                <>
+                    <div className="flex">
+                    {/*<ProductFilters />*/}
 
-          {/* Основной контент — правая колонка */}
-          <div className="flex-1 min-w-0">
-            {productItems.length > 0 ? (
-              <>
-                <ProductGrid items={productItems} />
-                <div className="mt-8">
-                  <Pagination
-                    basePath={`/catalog/${id}`}
-                    page={page}
-                    pageSize={pageSize}
-                    totalCount={totalCount}
-                    preserve={{
-                      BrandIds: readArrayParam(BrandIds).join(','),
-                      MinPrice,
-                      MaxPrice,
-                      SearchQuery,
-                    }}
-                  />
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-16 text-gray-500">
-                <p className="text-lg">В данной категории товаров пока нет.</p>
-                <p className="text-sm mt-2">Попробуйте посмотреть в других категориях.</p>
-              </div>
+                    {productItems.length > 0 ? (
+                        <>
+                            <ProductGrid items={productItems} />
+                            {/* Пагинация под гридом */}
+
+                        </>
+                    ) : (
+                        <p className="text-gray-600">Товары не найдены.</p>
+                    )}
+                    </div>
+                    <Pagination
+                        basePath={`/catalog/${node.id}`}
+                        page={page}
+                        pageSize={pageSize}
+                        totalCount={totalCount}
+                    />
+                </>
             )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+        </section>
+    );
 }

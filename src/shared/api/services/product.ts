@@ -33,7 +33,7 @@ export type ProductCategory = {
         id: string;
         name: string;
     }[];
-    children: any[];
+    children: unknown[];
 };
 
 export type ProductDetail = {

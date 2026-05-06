@@ -45,7 +45,7 @@ export function QuickQuantityModal({
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
-            handleSubmit(e as any);
+            handleSubmit(e as unknown);
         }
         if (e.key === 'Escape') {
             onClose();

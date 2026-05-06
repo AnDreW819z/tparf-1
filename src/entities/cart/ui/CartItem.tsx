@@ -7,6 +7,7 @@ import { CartItemDeleteButton } from '@/shared/ui/CartItemDeleteButton';
 import { QuickQuantityModal } from '@/entities/cart/ui/QuickQuantityModal';
 import { toast } from 'sonner';
 import { Pencil } from 'lucide-react';
+import Image from 'next/image';
 import type { CartItemType } from '@/shared/store/useCartStore';
 
 interface Props {
@@ -50,14 +51,20 @@ export default function CartItem({ item, token }: Props) {
         handleQuantityChange(newQuantity);
     };
 
+    // ✅ Безопасное получение imageUrl БЕЗ non-null assertion
+    const mainImageUrl = item.images.find((i) => i.isMain)?.imageUrl ||
+        item.images[0]?.imageUrl;
+
     return (
         <div className="relative rounded border border-[#DDDDDD] p-4 bg-white flex gap-4 group">
             <CartItemDeleteButton productId={item.productId} token={token} />
 
-            {item.images.find((i) => i.isMain)?.imageUrl && (
-                <img
-                    src={item.images.find((i) => i.isMain)?.imageUrl!}
+            {mainImageUrl && (
+                <Image
+                    src={mainImageUrl}
                     alt={item.productName}
+                    width={100}
+                    height={100}
                     className="w-24 h-24 object-cover rounded"
                 />
             )}

@@ -10,10 +10,15 @@ export function Footer() {
                 {/* Блок бренда */}
                 <div className="space-y-3">
                     <Link href="/" aria-label="На главную" className="inline-flex items-center gap-2">
-                        <Image src="/Logo.png" alt="Логотип" width={140} height={36} />
+                        <Image
+                            src="/Logo.png"
+                            alt="Логотип"
+                            width={140}
+                            height={36}
+                        />
                     </Link>
                     <p className="text-sm opacity-80">
-                        Торгово‑промышленное агентство. Оборудование и решения для перекачки и учёта ГСМ.
+                        Торгово‑промышленное агентство.
                     </p>
                 </div>
 
@@ -35,7 +40,7 @@ export function Footer() {
                         <li>Тел.: +7 (960) 795-75-23</li>
                         <li>Тел.: +7 (961) 872-27-51</li>
                         <li>Email: tpa@tparf.ru</li>
-                        <li>Адрес: г. Москва, ул. Пример, д. 1</li>
+                        <li>Адрес: 630132, Новосибирская область, город Новосибирск, Нарымская ул., д. 9, кв. 89</li>
                     </ul>
                 </div>
 

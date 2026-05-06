@@ -54,8 +54,11 @@ export const useCartStore = create<CartState>((set, get) => ({
         try {
             const cart = await getCart(token);
             set({ cart, loading: false });
-        } catch (error: any) {
-            set({ error: error.message || 'Ошибка загрузки корзины', loading: false });
+        } catch (error: unknown) {
+            set({
+                error: error instanceof Error ? error.message : 'Ошибка загрузки корзины',
+                loading: false
+            });
         }
     },
 

@@ -4,6 +4,7 @@ import { HeaderAuthButton } from './HeaderAuthButton';
 import { HeaderSearch } from './HeaderSearch';
 import type { User } from '@/shared/api/services/auth';
 import s from './Header.module.css';
+import Image from 'next/image';
 
 interface HeaderProps {
     user: User | null;
@@ -15,7 +16,12 @@ export function Header({ user }: HeaderProps) {
             <div className={s.inner}>
                 <nav className={s.lc}>
                     <Link href="/" className="text-xl font-semibold mr-8">
-                        <img src={'/Logo.png'} alt={'Торогово промышленное агенство'} />
+                        <Image
+                            src='/Logo.png'
+                            alt='Торогово промышленное агенство'
+                            width={100}
+                            height={100}
+                        />
                     </Link>
                     <Link
                         className="inline-flex items-center justify-center h-10 px-6 rounded-md button-primary transition-colors"

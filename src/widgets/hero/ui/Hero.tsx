@@ -1,7 +1,6 @@
 // src/widgets/hero/ui/Hero.tsx
 'use client';
 import Link from 'next/link';
-import {Button} from "@/shared/ui/button/ui/Button";
 
 export function Hero() {
     return (

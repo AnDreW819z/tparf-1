@@ -49,7 +49,9 @@ export function ImageWithFallback({ src, fallbackSrc = '/placeholder.png', ...re
             onError={() => setImgSrc(fallbackSrc)}
             onLoadingComplete={(result) => {
                 // если браузер вернул «битое» изображение нулевой ширины — переключаемся на фолбек
-                if ((result as any).naturalWidth === 0) setImgSrc(fallbackSrc);
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-expect-error
+                if ((result as unknown).naturalWidth === 0) setImgSrc(fallbackSrc);
             }}
         />
     );

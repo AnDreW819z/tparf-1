@@ -6,16 +6,19 @@ import OrdersPageClient from './OrdersPageClient';
 
 export default async function OrdersPage() {
     const user = await getUserFromCookie();
-    if (!user || !user.token) redirect('/auth/login');
+    if (!user) redirect('/auth/login');
 
     try {
         const orders = await getOrders(user.token);
         return <OrdersPageClient orders={orders} user={user} />;
-    } catch (err: any) {
-        if (err?.response?.status === 401 || err?.response?.status === 403) {
-            redirect('/auth/login');
+    } catch (err: unknown) {
+        // ✅ Безопасный доступ к ошибке
+        if (err && typeof err === 'object' && 'response' in err) {
+            const error = err as { response?: { status: number } };
+            if (error.response?.status === 401 || error.response?.status === 403) {
+                redirect('/auth/login');
+            }
         }
         throw err;
     }
 }
-
