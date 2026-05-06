@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { updateCartItem, removeFromCart } from '@/shared/api/services/cart';
 import { useCartStore } from '@/shared/store/useCartStore';
 import { CartItemDeleteButton } from '@/shared/ui/CartItemDeleteButton';
 import { QuickQuantityModal } from '@/entities/cart/ui/QuickQuantityModal';
@@ -28,19 +27,19 @@ export default function CartItem({ item, token }: Props) {
 
         try {
             if (newQuantity <= 0) {
-                await removeFromCart(token, item.productId);
-                removeItem(item.productId);
+                // ✅ Используем метод из store с синхронизацией
+                await removeItem(token, item.productId);
                 toast.success('Товар удален из корзины');
                 return;
             }
 
-            await updateCartItem(token, item.productId, newQuantity);
-            updateQuantity(item.productId, newQuantity);
+            // ✅ Используем метод из store с синхронизацией
+            await updateQuantity(token, item.productId, newQuantity);
             setQuantity(newQuantity);
             toast.success('Количество обновлено');
-        } catch (err) {
+        } catch (err: any) {
             console.error('Ошибка:', err);
-            toast.error('Ошибка при изменении количества');
+            toast.error(err.message || 'Ошибка при изменении количества');
             setQuantity(item.quantity);
         } finally {
             setLoading(false);
@@ -73,7 +72,7 @@ export default function CartItem({ item, token }: Props) {
                     Артикул: {item.productId} · {item.brandName ?? ''}
                 </div>
                 <div className="text-sm text-gray-500 mt-1">
-                    Цена за ед.: {item.price.toLocaleString('ru-RU')} {item.currencyCode}
+                    Цена за ед.: {item.unitPrice.toLocaleString('ru-RU')} {item.currencyCode}
                 </div>
                 <div className="mt-2 flex items-center justify-between text-sm text-gray-600">
                     <div className="flex items-center gap-2">
@@ -96,7 +95,6 @@ export default function CartItem({ item, token }: Props) {
                             >
                                 +
                             </button>
-                            {/* ✅ Кнопка быстрого ввода */}
                             <button
                                 onClick={() => setShowQuickModal(true)}
                                 className="w-8 h-8 rounded border border-gray-300 p-1.5 hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm transition-all flex items-center justify-center disabled:opacity-50"
@@ -108,12 +106,11 @@ export default function CartItem({ item, token }: Props) {
                         </div>
                     </div>
                     <span className="font-semibold text-gray-800">
-                        Итого: {(item.price * quantity).toLocaleString('ru-RU')} {item.currencyCode}
+                        Итого: {(item.unitPrice * quantity).toLocaleString('ru-RU')} {item.currencyCode}
                     </span>
                 </div>
             </div>
 
-            {/* ✅ Модальное окно */}
             <QuickQuantityModal
                 isOpen={showQuickModal}
                 onClose={() => setShowQuickModal(false)}

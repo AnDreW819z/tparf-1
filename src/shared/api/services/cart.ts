@@ -4,7 +4,6 @@ import type { CartResponse } from '@/shared/store/useCartStore';
 
 // GET /cart — получить корзину (требует токен)
 export async function getCart(token: string): Promise<CartResponse> {
-    console.log('получить корзину')
     const { data } = await api.get<CartResponse>('cart', {
         headers: { Authorization: `Bearer ${token}` },
     });
@@ -41,12 +40,11 @@ export async function updateCartItem(
     );
 }
 
-// DELETE /api/orders/{id} — удалить товар из корзины
+// DELETE /cart/items/{productId} — удалить товар из корзины
 export async function removeFromCart(
     token: string,
     productId: string
 ): Promise<void> {
-    console.log(productId)
     await api.delete(`cart/items/${productId}`, {
         headers: { Authorization: `Bearer ${token}` },
     });

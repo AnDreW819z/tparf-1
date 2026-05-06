@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getCart } from '@/shared/api/services/cart';
+import { getCart, removeFromCart as removeFromCartApi, updateCartItem as updateCartItemApi } from '@/shared/api/services/cart';
 
 export type CartImage = {
     id: string;
@@ -31,17 +31,15 @@ export type CartResponse = {
     createdAt: string;
 };
 
-// ✅ Исправленный тип состояния
 type CartState = {
     cart: CartResponse | null;
     loading: boolean;
     error: string | null;
 
-    // Actions
     setCart: (cart: CartResponse) => void;
-    fetchCart: (token: string) => Promise<void>; // ✅ Добавили в тип
-    removeItem: (productId: string) => void;
-    updateQuantity: (productId: string, quantity: number) => void;
+    fetchCart: (token: string) => Promise<void>;
+    removeItem: (token: string, productId: string) => Promise<void>;
+    updateQuantity: (token: string, productId: string, quantity: number) => Promise<void>;
 };
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -51,7 +49,6 @@ export const useCartStore = create<CartState>((set, get) => ({
 
     setCart: (cart) => set({ cart }),
 
-    // ✅ Метод для полной синхронизации с сервером
     fetchCart: async (token) => {
         set({ loading: true, error: null });
         try {
@@ -62,10 +59,15 @@ export const useCartStore = create<CartState>((set, get) => ({
         }
     },
 
-    removeItem: (productId: string) => {
+    // ✅ Оптимистичное обновление с синхронизацией на сервере
+    removeItem: async (token, productId) => {
         const { cart } = get();
         if (!cart) return;
 
+        // Сохраняем состояние для отката
+        const previousCart = cart;
+
+        // Оптимистичное обновление UI
         const updatedItems = cart.items.filter(item => item.productId !== productId);
         const newItemCount = updatedItems.reduce((acc, item) => acc + item.quantity, 0);
         const newTotalPrice = updatedItems.reduce((acc, item) => acc + item.price, 0);
@@ -79,15 +81,28 @@ export const useCartStore = create<CartState>((set, get) => ({
                 totalAmount: newTotalPrice,
             },
         });
+
+        // Запрос к API
+        try {
+            await removeFromCartApi(token, productId);
+        } catch (error) {
+            // Откат при ошибке
+            set({ cart: previousCart });
+            throw error;
+        }
     },
 
-    updateQuantity: (productId: string, quantity: number) => {
+    updateQuantity: async (token, productId, quantity) => {
         const { cart } = get();
         if (!cart) return;
 
+        const previousCart = cart;
+
+        // Оптимистичное обновление UI
         const updatedItems = cart.items.map(item => {
             if (item.productId === productId) {
-                return { ...item, quantity };
+                const newPrice = item.unitPrice * quantity;
+                return { ...item, quantity, price: newPrice };
             }
             return item;
         }).filter(item => item.quantity > 0);
@@ -104,5 +119,14 @@ export const useCartStore = create<CartState>((set, get) => ({
                 totalAmount: newTotalPrice,
             },
         });
+
+        // Запрос к API
+        try {
+            await updateCartItemApi(token, productId, quantity);
+        } catch (error) {
+            // Откат при ошибке
+            set({ cart: previousCart });
+            throw error;
+        }
     },
 }));

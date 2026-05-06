@@ -63,14 +63,38 @@ export type ProductsResponse = {
     pageSize: number;
 };
 
+export type ProductFilterParams = {
+    page?: number;
+    pageSize?: number;
+    brandIds?: string[];
+    minPrice?: number;
+    maxPrice?: number;
+    searchQuery?: string;
+};
+
 export async function fetchProductsByCategoryId(
     categoryId: string,
-    params?: { page?: number; pageSize?: number }
+    params?: ProductFilterParams
 ) {
-    const { page = 1, pageSize = 20 } = params ?? {};
+    const { page = 1, pageSize = 20, brandIds, minPrice, maxPrice, searchQuery } = params ?? {};
+    const queryParams: Record<string, string | number> = {
+        Page: page,
+        PageSize: pageSize,
+    };
+    if (brandIds && brandIds.length > 0) {
+        queryParams.BrandIds = brandIds.join(',');
+    }
+    if (minPrice !== undefined) {
+        queryParams.MinPrice = minPrice;
+    }
+    if (maxPrice !== undefined) {
+        queryParams.MaxPrice = maxPrice;
+    }
+    if (searchQuery) {
+        queryParams.SearchQuery = searchQuery;
+    }
     const { data } = await api.get<ProductsResponse>(`categories/${categoryId}/products`, {
-        params: { Page: page, PageSize: pageSize }, // важно: с заглавной буквы, как требует API
+        params: queryParams,
     });
     return data;
 }
-

@@ -1,79 +1,97 @@
 import { notFound } from 'next/navigation';
-import { fetchProductById } from '@/shared/api/services/product';
-import { getUserFromCookie } from '@/shared/server/auth';
-import { getCart } from '@/shared/api/services/cart';
-import { Breadcrumbs } from '@/widgets/breadcrumbs/ui/Breadcrumbs';
-import { ProductGallery } from '@/entities/product/ui/ProductGallery';
-import { ProductInfoClient } from '@/entities/product/ui/ProductInfoClient'; // ✅ Клиентский компонент
-import { ProductDescription } from '@/entities/product/ui/ProductDescription';
-import { ProductCharacteristics } from '@/entities/product/ui/ProductCharacteristics';
+import { Metadata } from 'next';
+import { fetchProductById } from '../../../src/shared/api/services/product';
+import { getUserFromCookie } from '../../../src/shared/server/auth';
+import { getCart } from '../../../src/shared/api/services/cart';
+import { Breadcrumbs } from '../../../src/widgets/breadcrumbs/ui/Breadcrumbs';
+import { ProductGallery } from '../../../src/entities/product/ui/ProductGallery';
+import { ProductInfoClient } from '../../../src/entities/product/ui/ProductInfoClient';
+import { ProductDescription } from '../../../src/entities/product/ui/ProductDescription';
+import { ProductCharacteristics } from '../../../src/entities/product/ui/ProductCharacteristics';
 
 export const revalidate = 300;
 
-export default async function ProductPage({ params }: { params: { id: string } }) {
-    let product;
-    let initialCartInfo = null;
+type Props = {
+  params: Promise<{ id: string }>;
+};
 
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const product = await fetchProductById(id);
+    return {
+      title: product.name,
+      description:
+        product.descriptions?.[0]?.content || `Товар ${product.name}`,
+    };
+  } catch {
+    return {
+      title: 'Товар',
+    };
+  }
+}
+
+export default async function ProductPage({ params }: Props) {
+  const { id } = await params;
+
+  let product;
+  let initialCartInfo = null;
+
+  try {
+    product = await fetchProductById(id);
+  } catch (e: any) {
+    if (e?.response?.status === 404) notFound();
+    throw e;
+  }
+
+  const user = await getUserFromCookie();
+  if (user?.token) {
     try {
-        product = await fetchProductById(params.id);
-    } catch (e: any) {
-        if (e?.response?.status === 404) notFound();
-        throw e;
+      const cart = await getCart(user.token);
+      const cartItem = cart.items.find((item) => item.productId === id);
+      initialCartInfo = cartItem
+        ? { inCart: true, quantity: cartItem.quantity }
+        : { inCart: false, quantity: 0 };
+    } catch (error) {
+      console.error('Ошибка загрузки корзины:', error);
     }
+  }
 
-    // ✅ Проверяем авторизацию и получаем корзину
-    const user = await getUserFromCookie();
-    if (user?.token) {
-        try {
-            const cart = await getCart(user.token);
-            // Ищем товар в корзине
-            const cartItem = cart.items.find(item => item.productId === params.id);
-            initialCartInfo = cartItem ? { inCart: true, quantity: cartItem.quantity } : { inCart: false, quantity: 0 };
-        } catch (error) {
-            console.error('Ошибка загрузки корзины:', error);
-            // Если ошибка - используем cartInfo из product
-        }
-    }
+  const finalCartInfo = product.cartInfo || initialCartInfo;
 
-    // Объединяем информацию о корзине
-    const finalCartInfo = product.cartInfo || initialCartInfo;
+  const categories = product.categories;
+  const pathItems = categories[0]?.pathItems ?? [];
+  const crumbs = pathItems.map((pi: any) => ({
+    id: pi.id,
+    title: pi.name,
+  }));
 
-    // Берём крошки из первой категории
-    const categories = product.categories;
-    const pathItems = categories[0]?.pathItems ?? [];
-    const baseCrumbs = pathItems.map((pi) => ({ id: pi.id, title: pi.name }));
-    const crumbs = [...baseCrumbs, { id: product.id, title: product.name, isCurrent: true }];
+  const images = product.images ?? [];
 
-    const images = product.images ?? [];
-    const mainImage = images.find((i) => i.isMain)?.imageUrl ?? images[0]?.imageUrl;
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-6">
+      <Breadcrumbs crumbs={crumbs} currentName={product.name} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-6">
+        {/* Левая колонка — галерея */}
+        <ProductGallery images={images} alt={product.name} />
+        {/* Правая колонка — информация о товаре */}
+        <ProductInfoClient
+          productId={product.id}
+          name={product.name}
+          sku={product.sku || ''}
+          price={product.price}
+          currencyCode={product.currencyCode || 'RUB'}
+          brandName={product.brandName || undefined}
+          cartInfo={finalCartInfo}
+          user={user}
+        />
+      </div>
 
-    return (
-        <section className="mx-auto max-w-7xl px-4 py-8">
-            <Breadcrumbs crumbs={crumbs} className="mb-6" />
-
-            <div className="grid gap-8 lg:grid-cols-2">
-                <ProductGallery images={images} alt={product.name} />
-                {/* ✅ Передаем данные в клиентский компонент */}
-                <ProductInfoClient
-                    productId={product.id}
-                    name={product.name}
-                    sku={product.sku}
-                    price={product.price}
-                    currencyCode={product.currencyCode}
-                    brandName={product.brandName}
-                    cartInfo={finalCartInfo}
-                    user={user}
-                />
-            </div>
-
-            <div className="mt-10 grid gap-8 lg:grid-cols-3">
-                <div className="lg:col-span-2 space-y-8">
-                    <ProductDescription blocks={product.descriptions ?? []} />
-                </div>
-                <div className="space-y-8">
-                    <ProductCharacteristics data={product.characteristics ?? {}} />
-                </div>
-            </div>
-        </section>
-    );
+      {/* Описание и характеристики под карточкой товара */}
+      <div className="mt-12 space-y-10">
+        <ProductDescription blocks={product.descriptions || []} />
+        <ProductCharacteristics data={product.characteristics || {}} />
+      </div>
+    </div>
+  );
 }

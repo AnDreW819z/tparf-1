@@ -7,18 +7,26 @@ import { CategoryCrumb } from '@/entities/category/model/types';
 type Props = {
     crumbs: CategoryCrumb[]; // [{id, title}] из node.pathItems
     className?: string;
+    /** Последний элемент (например, название товара) — не ссылка */
+    currentName?: string;
 };
 
-export function Breadcrumbs({ crumbs, className }: Props) {
-    // Формируем полный список: "Каталог" + элементы pathItems
-    const fullCrumbs = [
-        { id: '', title: 'Каталог', href: '/catalog' }, // корень каталога
+export function Breadcrumbs({ crumbs, className, currentName }: Props) {
+    // Формируем полный список: "Главная" → "Каталог" → элементы pathItems → currentName
+    const fullCrumbs: { id: string; title: string; href?: string }[] = [
+        { id: '', title: 'Главная', href: '/' },
+        { id: 'catalog', title: 'Каталог', href: '/catalog' },
         ...crumbs.map((c) => ({
             id: c.id,
             title: c.title,
-            href: `/catalog/${c.id}`, // абсолютный путь по id
+            href: `/catalog/${c.id}`,
         })),
     ];
+
+    // Если передан currentName (название товара), добавляем как последний элемент без ссылки
+    if (currentName) {
+        fullCrumbs.push({ id: '', title: currentName });
+    }
 
     return (
         <nav aria-label="breadcrumbs" className={className}>
@@ -26,15 +34,17 @@ export function Breadcrumbs({ crumbs, className }: Props) {
                 {fullCrumbs.map((c, i) => {
                     const isLast = i === fullCrumbs.length - 1;
                     return (
-                        <li key={`${c.id || 'root'}-${i}`} className="flex items-center">
+                        <li key={`${c.id || 'breadcrumb'}-${i}`} className="flex items-center">
                             {isLast ? (
-                                <span className="font-medium">{c.title}</span>
-                            ) : (
-                                <Link href={c.href} className="hover:underline">
+                                <span className="font-medium text-gray-900">{c.title}</span>
+                            ) : c.href ? (
+                                <Link href={c.href} className="hover:underline hover:text-blue-600 transition-colors">
                                     {c.title}
                                 </Link>
+                            ) : (
+                                <span>{c.title}</span>
                             )}
-                            {!isLast && <span className="mx-2 select-none text-gray-400">{'>'}</span>}
+                            {!isLast && <span className="mx-2 select-none text-gray-400 text-xs">{'>'}</span>}
                         </li>
                     );
                 })}
