@@ -14,6 +14,10 @@ export type RegisterResponse = {
     token: string;
 };
 
+export type ConfirmEmailResponse = {
+    message: string;
+};
+
 export type CartProduct = {
     id: string;
     name: string;
@@ -49,6 +53,23 @@ export async function register(payload: RegisterPayload): Promise<RegisterRespon
     return data;
 }
 
+export async function confirmEmail(userId: string, token: string): Promise<ConfirmEmailResponse> {
+    const { data } = await api.get<ConfirmEmailResponse>('auth/confirm-email', {
+        params: {
+            userId,
+            token,
+            redirectToFrontend: false,
+        },
+    });
+
+    return data;
+}
+
+export async function confirmEmailByCode(code: string): Promise<ConfirmEmailResponse> {
+    const { data } = await api.get<ConfirmEmailResponse>(`auth/confirm-email/code/${encodeURIComponent(code)}`);
+    return data;
+}
+
 export async function getCart(token: string): Promise<CartResponse> {
     const { data } = await api.get<CartResponse>('cart', {
         headers: { Authorization: `Bearer ${token}` },
@@ -64,7 +85,12 @@ export type User = {
     isActive: boolean;
     emailConfirmed: boolean;
     roles: string[];
+    role?: string | null;
     brandIds: string[];
+};
+
+export type UserWithToken = User & {
+    token: string;
 };
 
 export async function fetchMeServer(token: string): Promise<User> {

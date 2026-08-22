@@ -1,35 +1,37 @@
 'use client';
 
 import Link from 'next/link';
-import { Button } from '@/shared/ui/button/ui/Button';
 import type { User } from '@/shared/api/services/auth';
-import { canAccessAdminPanel } from '@/shared/lib/access';
 
 interface HeaderAuthButtonProps {
-	user: User | null;
+    user: User | null;
 }
 
+const secondaryLinkClass =
+    'inline-flex items-center justify-center min-h-[38px] rounded-full border border-white/[0.12] bg-white/[0.04] px-4 text-sm font-medium text-white transition hover:bg-white/[0.08]';
+
+const primaryLinkClass =
+    'inline-flex items-center justify-center min-h-[38px] rounded-full px-4 text-sm font-semibold button-primary transition-colors';
+
 export function HeaderAuthButton({ user }: HeaderAuthButtonProps) {
-	const showAdminLink = canAccessAdminPanel(user);
+    if (user) {
+        return (
+            <div className="flex flex-wrap items-center justify-end gap-2">
+                <Link href="/cart" className={primaryLinkClass}>
+                    Корзина
+                </Link>
+            </div>
+        );
+    }
 
-	if (user) {
-		return (
-			<div className="flex items-center gap-2">
-				{showAdminLink && (
-					<Button variant="secondary">
-						<Link href="/admin">Админка</Link>
-					</Button>
-				)}
-				<Button>
-					<Link href="/cart">Корзина</Link>
-				</Button>
-			</div>
-		);
-	}
-
-	return (
-		<Button>
-			<Link href="/auth/login">Корзина</Link>
-		</Button>
-	);
+    return (
+        <div className="flex flex-wrap items-center justify-end gap-2">
+            <Link href="/auth/login" className={secondaryLinkClass}>
+                Войти
+            </Link>
+            <Link href="/auth/login" className={primaryLinkClass}>
+                Корзина
+            </Link>
+        </div>
+    );
 }

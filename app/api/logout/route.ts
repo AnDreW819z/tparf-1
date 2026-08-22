@@ -1,31 +1,15 @@
-// app/api/logout/route.ts
-import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 
-function resolveApiBaseUrl(request: Request) {
-    const configuredBaseUrl =
-        process.env.API_BASE_URL_INTERNAL || process.env.NEXT_PUBLIC_API_BASE_URL;
+const apiBaseUrl =
+    process.env.API_BASE_URL_INTERNAL ||
+    'http://localhost:7156/api/';
 
-    if (!configuredBaseUrl) {
-        return null;
-    }
-
-    try {
-        return new URL(configuredBaseUrl.endsWith('/') ? configuredBaseUrl : `${configuredBaseUrl}/`);
-    } catch {
-        return new URL(
-            configuredBaseUrl.endsWith('/') ? configuredBaseUrl : `${configuredBaseUrl}/`,
-            request.url
-        );
-    }
-}
-
-export async function POST(request: Request) {
+export async function POST() {
     const cookieStore = await cookies();
     const token = cookieStore.get('auth_token')?.value;
-    const apiBaseUrl = resolveApiBaseUrl(request);
 
-    if (token && apiBaseUrl) {
+    if (token) {
         try {
             await fetch(new URL('auth/logout', apiBaseUrl), {
                 method: 'POST',
@@ -35,13 +19,11 @@ export async function POST(request: Request) {
                 cache: 'no-store',
             });
         } catch {
+            // Even if the backend logout call fails, we still clear the local session cookie.
         }
     }
 
-    const response = NextResponse.json({ ok: true });
-    response.cookies.set('auth_token', '', {
-        path: '/',
-        expires: new Date(0),
-    });
-    return response;
+    cookieStore.delete('auth_token');
+
+    return NextResponse.json({ ok: true });
 }

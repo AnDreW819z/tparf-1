@@ -1,23 +1,27 @@
-// src/entities/cart/ui/AddToCartModal.tsx
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
-import { toast } from 'sonner';
 
 interface AddToCartModalProps {
     isOpen: boolean;
     onClose: () => void;
     onAddToCart: (quantity: number) => void;
     loading: boolean;
+    title?: string;
+    description?: string;
+    submitLabel?: string;
 }
 
 export function AddToCartModal({
-                                   isOpen,
-                                   onClose,
-                                   onAddToCart,
-                                   loading
-                               }: AddToCartModalProps) {
+    isOpen,
+    onClose,
+    onAddToCart,
+    loading,
+    title = 'Добавить в корзину',
+    description = 'Выберите количество товара',
+    submitLabel = 'Добавить в корзину',
+}: AddToCartModalProps) {
     const [quantity, setQuantity] = useState('1');
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -28,30 +32,31 @@ export function AddToCartModal({
         }
     }, [isOpen]);
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const numQuantity = parseInt(quantity);
+    const handleSubmit = (event: React.FormEvent) => {
+        event.preventDefault();
+        const numQuantity = Number.parseInt(quantity, 10);
+
         if (numQuantity > 0) {
             onAddToCart(numQuantity);
         }
     };
 
     const increment = () => {
-        setQuantity((prev) => (parseInt(prev) + 1).toString());
+        setQuantity((prev) => (Number.parseInt(prev, 10) + 1).toString());
     };
 
     const decrement = () => {
-        const current = parseInt(quantity);
+        const current = Number.parseInt(quantity, 10);
         if (current > 1) {
             setQuantity((current - 1).toString());
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            handleSubmit(e as unknown);
+    const handleKeyDown = (event: React.KeyboardEvent) => {
+        if (event.key === 'Enter') {
+            handleSubmit(event as unknown as React.FormEvent);
         }
-        if (e.key === 'Escape') {
+        if (event.key === 'Escape') {
             onClose();
         }
     };
@@ -60,89 +65,71 @@ export function AddToCartModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div
-                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                onClick={onClose}
-            />
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 max-h-[90vh] overflow-hidden">
-                {/* Header */}
-                <div className="p-6 pb-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="relative mx-4 max-h-[90vh] w-full max-w-md overflow-hidden rounded-[1.5rem] bg-white shadow-2xl">
+                <div className="border-b border-slate-200 bg-slate-50 p-6 pb-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h3 className="text-xl font-bold text-gray-900">
-                                Добавить в корзину
-                            </h3>
-                            <p className="text-sm text-gray-600 mt-1">
-                                Выберите количество товара
-                            </p>
+                            <h3 className="text-xl font-semibold text-slate-950">{title}</h3>
+                            <p className="mt-1 text-sm text-slate-600">{description}</p>
                         </div>
                         <button
                             onClick={onClose}
-                            className="p-2 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center -m-2"
+                            className="flex h-10 w-10 items-center justify-center rounded-xl transition hover:bg-slate-200"
                             disabled={loading}
                         >
-                            <X className="h-5 w-5 text-gray-500" />
+                            <X className="h-5 w-5 text-slate-500" />
                         </button>
                     </div>
                 </div>
 
-                {/* Form */}
                 <form onSubmit={handleSubmit} className="p-6">
                     <div className="space-y-6">
-                        {/* Кнопки +/- */}
                         <div className="flex items-center justify-center">
                             <button
                                 type="button"
                                 onClick={decrement}
-                                className="w-12 h-12 rounded-xl border-2 border-gray-200 hover:border-gray-300 hover:shadow-md transition-all flex items-center justify-center text-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-slate-200 text-xl font-bold transition hover:border-slate-300 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
                                 disabled={loading}
                             >
-                                −
+                                -
                             </button>
                             <input
                                 ref={inputRef}
                                 type="number"
                                 min="1"
                                 value={quantity}
-                                onChange={(e) => setQuantity(e.target.value)}
+                                onChange={(event) => setQuantity(event.target.value)}
                                 onKeyDown={handleKeyDown}
-                                className="w-24 h-14 mx-4 text-center text-2xl font-bold border-0 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl"
+                                className="mx-4 h-14 w-24 rounded-xl border border-slate-200 bg-white text-center text-2xl font-semibold text-slate-950 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
                                 disabled={loading}
                             />
                             <button
                                 type="button"
                                 onClick={increment}
-                                className="w-12 h-12 rounded-xl border-2 border-gray-200 hover:border-gray-300 hover:shadow-md transition-all flex items-center justify-center text-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-slate-200 text-xl font-bold transition hover:border-slate-300 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
                                 disabled={loading}
                             >
                                 +
                             </button>
                         </div>
 
-                        {/* Кнопки */}
                         <div className="flex gap-3 pt-2">
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="flex-1 px-6 py-3 text-sm font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 hover:shadow-sm rounded-xl transition-all disabled:opacity-50"
+                                className="button-brand-secondary flex min-h-12 flex-1 px-6 py-3 text-sm font-semibold disabled:opacity-50"
                                 disabled={loading}
                             >
                                 Отмена
                             </button>
                             <button
                                 type="submit"
-                                className="flex-1 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 active:scale-[0.98] shadow-lg hover:shadow-xl rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                className="button-brand-primary flex min-h-12 flex-1 items-center justify-center px-6 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
                                 disabled={loading}
                             >
-                                {loading ? (
-                                    <>
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                                        Добавляем...
-                                    </>
-                                ) : (
-                                    'Добавить в корзину'
-                                )}
+                                {loading ? 'Сохраняем...' : submitLabel}
                             </button>
                         </div>
                     </div>

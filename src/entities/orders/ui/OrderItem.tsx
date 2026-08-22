@@ -1,11 +1,11 @@
-// src/entities/orders/ui/OrderItem.tsx
 'use client';
 
-import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 import { ChevronDown, ChevronUp, Package } from 'lucide-react';
 import type { Order, OrderItem as OrderItemType } from '@/shared/api/services/orders';
-import { formatDate } from '@/shared/lib/utils';
+import { formatProductPrice, isRequestPrice } from '@/shared/lib/price';
 
 interface OrderItemProps {
     order: Order;
@@ -29,37 +29,32 @@ const STATUS_COLORS: Record<number, string> = {
 
 export default function OrderItem({ order }: OrderItemProps) {
     const [isExpanded, setIsExpanded] = useState(false);
-
-    const formatPrice = (amount: number) => new Intl.NumberFormat('ru-RU').format(amount);
-
     const statusLabel = STATUS_LABELS[order.status];
     const statusClass = STATUS_COLORS[order.status];
+    const defaultCurrency = order.items[0]?.currencyCode ?? 'RUB';
+    const totalLabel = formatProductPrice(order.totalAmount, defaultCurrency);
 
     return (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
             <div
-                className="p-6 hover:bg-gray-50 transition-colors cursor-pointer"
+                className="cursor-pointer p-6 transition-colors hover:bg-gray-50"
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                    <div className="flex min-w-0 flex-1 items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100">
                             <Package className="h-6 w-6 text-gray-500" />
                         </div>
                         <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-gray-500 truncate">
-                                Заказ #{order.orderNumber}
-                            </p>
-                            <p className="text-2xl font-bold text-gray-900">
-                                {formatPrice(order.totalAmount)} ₽
-                            </p>
+                            <p className="truncate text-sm font-medium text-gray-500">Заказ #{order.orderNumber}</p>
+                            <p className="text-2xl font-bold text-gray-900">{totalLabel}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusClass}`}>
+                        <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusClass}`}>
                             {statusLabel}
                         </span>
-                        <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center">
+                        <button className="flex items-center rounded-lg p-2 transition-colors hover:bg-gray-100">
                             {isExpanded ? (
                                 <ChevronUp className="h-4 w-4 text-gray-500" />
                             ) : (
@@ -74,45 +69,49 @@ export default function OrderItem({ order }: OrderItemProps) {
                 <div className="border-t border-gray-100 bg-gray-50">
                     <div className="p-6">
                         <div className="grid gap-4 md:grid-cols-3">
-                            {order.items.map((item: OrderItemType) => (
-                                <div
-                                    key={item.id}
-                                    className="flex items-center gap-3 p-4 bg-white rounded-xl border hover:shadow-sm transition-all"
-                                >
-                                    {item.images[0] && (
-                                        <Image
-                                            src={item.images[0].imageUrl}
-                                            width={100}
-                                            height={100}
-                                            alt={item.productName || 'Товар'}
-                                            className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
-                                        />
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                        <Link
-                                            href={`/product/${item.productId}`}
-                                            className="font-medium text-gray-900 hover:text-blue-600 truncate block"
-                                        >
-                                            {item.productName || `ID: ${item.productId.slice(-8)}`}
-                                        </Link>
-                                        <p className="text-sm text-gray-500 mt-1">{item.brandName}</p>
+                            {order.items.map((item: OrderItemType) => {
+                                const itemTotalLabel = formatProductPrice(item.totalPrice, item.currencyCode);
+                                const unitLabel = formatProductPrice(item.unitPrice, item.currencyCode);
+
+                                return (
+                                    <div
+                                        key={item.id}
+                                        className="flex items-center gap-3 rounded-xl border bg-white p-4 transition-all hover:shadow-sm"
+                                    >
+                                        {item.images[0] && (
+                                            <Image
+                                                src={item.images[0].imageUrl}
+                                                width={100}
+                                                height={100}
+                                                alt={item.productName || 'Товар'}
+                                                className="h-16 w-16 flex-shrink-0 rounded-lg object-cover"
+                                            />
+                                        )}
+                                        <div className="min-w-0 flex-1">
+                                            <Link
+                                                href={`/product/${item.productId}`}
+                                                className="block truncate font-medium text-gray-900 hover:text-blue-600"
+                                            >
+                                                {item.productName || `ID: ${item.productId.slice(-8)}`}
+                                            </Link>
+                                            <p className="mt-1 text-sm text-gray-500">{item.brandName}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-lg font-bold text-gray-900">{itemTotalLabel}</p>
+                                            <p className="text-sm text-gray-500">
+                                                {item.quantity} x {unitLabel}
+                                            </p>
+                                            {isRequestPrice(item.unitPrice) && (
+                                                <p className="mt-1 text-xs text-gray-400">Стоимость уточняется</p>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-lg font-bold text-gray-900">
-                                            {formatPrice(item.totalPrice)} ₽
-                                        </p>
-                                        <p className="text-sm text-gray-500">
-                                            {item.quantity} × {formatPrice(item.price)} ₽
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         {order.items.length === 0 && (
-                            <div className="text-center py-12 text-gray-500">
-                                В этом заказе нет товаров
-                            </div>
+                            <div className="py-12 text-center text-gray-500">В этом заказе нет товаров</div>
                         )}
                     </div>
                 </div>

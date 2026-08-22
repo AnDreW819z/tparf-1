@@ -2,6 +2,7 @@
 'use client';
 import Link from 'next/link';
 import clsx from 'clsx';
+import { formatProductPrice } from '@/shared/lib/price';
 import { ImageWithFallback } from '@/shared/ui/image/ImageWithFallback';
 
 export type ProductCardProps = {
@@ -59,7 +60,7 @@ export function ProductCard({
             </h3>
 
             <div className="text-black font-semibold">
-                {price.toLocaleString('ru-RU')} {currencyCode}
+                {formatProductPrice(price, currencyCode)}
             </div>
         </div>
     );

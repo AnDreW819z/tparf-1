@@ -20,6 +20,15 @@ export type ProductDescription = {
     sortOrder: number;
 };
 
+export type ProductCharacteristic = {
+    id: string;
+    name: string;
+    value: string;
+    unit: string | null;
+    type: number;
+    sortOrder: number;
+};
+
 export type ProductCategory = {
     id: string;
     name: string;
@@ -47,6 +56,7 @@ export type ProductDetail = {
     images: ProductImage[];
     descriptions: ProductDescription[];
     characteristics: Record<string, unknown>;
+    characteristicItems?: ProductCharacteristic[];
     stockQuantity: number;
     isActive: boolean;
     cartInfo: CartInfo;

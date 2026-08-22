@@ -8,12 +8,12 @@ import {
 	Coins,
 	FileSpreadsheet,
 	FolderTree,
+	Newspaper,
 	RefreshCcw,
 	Search,
 	Shield,
 	ShoppingCart,
 	Tags,
-	Trash2,
 	UploadCloud,
 	Users2,
 } from 'lucide-react';
@@ -29,6 +29,7 @@ import {
 	createBrand,
 	createCategory,
 	createCurrency,
+	createNewsItem,
 	createProduct,
 	createTemplate,
 	deleteAllBrands,
@@ -37,6 +38,7 @@ import {
 	deleteBrand,
 	deleteCategory,
 	deleteCurrency,
+	deleteNewsItem,
 	deleteProduct,
 	deleteProductCharacteristic,
 	deleteProductDescription,
@@ -48,6 +50,7 @@ import {
 	getCurrencies,
 	getDashboard,
 	getEmailHistory,
+	getNewsItems,
 	getOrder,
 	getOrders,
 	getProduct,
@@ -77,6 +80,7 @@ import {
 	type DashboardData,
 	type EmailLog,
 	type FilterParams,
+	type NewsItem,
 	type NotificationTemplate,
 	type Order,
 	type PagedResult,
@@ -91,9 +95,11 @@ import {
 	type SaveCurrencyPayload,
 	type SaveDescriptionPayload,
 	type SaveImagePayload,
+	type SaveNewsPayload,
 	type SaveProductPayload,
 	type SaveTemplatePayload,
 	type SystemNotificationPayload,
+	updateNewsItem,
 } from '@/features/admin/api';
 
 type AuthenticatedUser = User & { token: string };
@@ -102,6 +108,7 @@ type AdminTab =
 	| 'users'
 	| 'products'
 	| 'brands'
+	| 'news'
 	| 'categories'
 	| 'orders'
 	| 'currencies'
@@ -109,6 +116,9 @@ type AdminTab =
 	| 'imports';
 
 type Notice = { type: 'success' | 'error'; text: string } | null;
+type PendingProductImage = ProductImage;
+type PendingProductDescription = ProductDescription;
+type PendingProductCharacteristic = ProductCharacteristic;
 
 const inputClass =
 	'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500';
@@ -203,6 +213,12 @@ const emptyTemplateForm: SaveTemplatePayload = {
 	type: 4,
 };
 
+const emptyNewsForm: SaveNewsPayload = {
+	title: '',
+	content: '',
+	imageUrl: '',
+};
+
 const emptyBulkEmailForm: BulkEmailPayload = {
 	recipients: [],
 	subject: '',
@@ -219,6 +235,64 @@ function flattenCategories(items: Category[], depth = 0): Array<Category & { dep
 		{ ...item, depth },
 		...flattenCategories(item.children ?? [], depth + 1),
 	]);
+}
+
+function findCategoryById(items: Category[], id: string): Category | null {
+	for (const item of items) {
+		if (item.id === id) return item;
+		const childMatch = findCategoryById(item.children ?? [], id);
+		if (childMatch) return childMatch;
+	}
+
+	return null;
+}
+
+function buildCategoryLineage(items: Category[], id: string): string[] {
+	for (const item of items) {
+		if (item.id === id) return [item.id];
+		const childLineage = buildCategoryLineage(item.children ?? [], id);
+		if (childLineage.length > 0) return [item.id, ...childLineage];
+	}
+
+	return [];
+}
+
+function collectCategoryDescendantIds(item: Category | null): string[] {
+	if (!item) return [];
+	return (item.children ?? []).flatMap((child) => [child.id, ...collectCategoryDescendantIds(child)]);
+}
+
+function buildCategoryLevels(items: Category[], selectedIds: string[]) {
+	const levels: Category[][] = [items];
+	let currentItems = items;
+
+	for (const selectedId of selectedIds) {
+		const next = currentItems.find((item) => item.id === selectedId);
+		if (!next || !next.children?.length) break;
+		levels.push(next.children);
+		currentItems = next.children;
+	}
+
+	return levels;
+}
+
+function getOrderRowClass(status: number, selected: boolean) {
+	if (selected) return 'bg-slate-100';
+
+	switch (status) {
+		case 1:
+			return 'bg-amber-50';
+		case 2:
+			return 'bg-orange-50';
+		case 3:
+			return 'bg-sky-50';
+		case 4:
+			return 'bg-emerald-50';
+		case 5:
+			return 'bg-rose-50';
+		default:
+			return '';
+	}
 }
 
 function readMultiValue(event: React.ChangeEvent<HTMLSelectElement>) {
@@ -339,6 +413,7 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 	const [productsPage, setProductsPage] = useState<PagedResult<Product> | null>(null);
 	const [ordersPage, setOrdersPage] = useState<PagedResult<Order> | null>(null);
 	const [brandsPage, setBrandsPage] = useState<PagedResult<Brand> | null>(null);
+	const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
 	const [categories, setCategories] = useState<Category[]>([]);
 	const [currenciesPage, setCurrenciesPage] = useState<PagedResult<Currency> | null>(null);
 	const [templates, setTemplates] = useState<NotificationTemplate[]>([]);
@@ -372,17 +447,24 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 		categoryIds: [],
 	});
 	const [brandForm, setBrandForm] = useState<SaveBrandPayload>(emptyBrandForm);
+	const [newsForm, setNewsForm] = useState<SaveNewsPayload>(emptyNewsForm);
 	const [categoryForm, setCategoryForm] = useState<SaveCategoryPayload>(emptyCategoryForm);
 	const [currencyForm, setCurrencyForm] = useState<SaveCurrencyPayload>(emptyCurrencyForm);
 	const [imageForm, setImageForm] = useState<SaveImagePayload>(emptyImageForm);
 	const [descriptionForm, setDescriptionForm] = useState<SaveDescriptionPayload>(emptyDescriptionForm);
 	const [characteristicForm, setCharacteristicForm] = useState<SaveCharacteristicPayload>(emptyCharacteristicForm);
+	const [pendingImages, setPendingImages] = useState<PendingProductImage[]>([]);
+	const [pendingDescriptions, setPendingDescriptions] = useState<PendingProductDescription[]>([]);
+	const [pendingCharacteristics, setPendingCharacteristics] = useState<PendingProductCharacteristic[]>([]);
+	const [productCategoryDraftId, setProductCategoryDraftId] = useState('');
+	const [categoryParentChain, setCategoryParentChain] = useState<string[]>([]);
 	const [templateForm, setTemplateForm] = useState<SaveTemplatePayload>(emptyTemplateForm);
 	const [bulkEmailForm, setBulkEmailForm] = useState<BulkEmailPayload>(emptyBulkEmailForm);
 	const [systemNotificationForm, setSystemNotificationForm] =
 		useState<SystemNotificationPayload>(emptySystemNotificationForm);
 
 	const [editingBrandId, setEditingBrandId] = useState<string | null>(null);
+	const [editingNewsId, setEditingNewsId] = useState<string | null>(null);
 	const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
 	const [editingCurrencyId, setEditingCurrencyId] = useState<string | null>(null);
 	const [editingImageId, setEditingImageId] = useState<string | null>(null);
@@ -405,9 +487,24 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 	}, [admin, brandsPage?.items, user.brandIds]);
 
 	const flattenedCategories = useMemo(() => flattenCategories(categories), [categories]);
+	const blockedParentIds = useMemo(() => {
+		if (!editingCategoryId) return new Set<string>();
+		const currentCategory = findCategoryById(categories, editingCategoryId);
+		return new Set([editingCategoryId, ...collectCategoryDescendantIds(currentCategory)]);
+	}, [categories, editingCategoryId]);
+	const categoryLevels = useMemo(
+		() =>
+			buildCategoryLevels(categories, categoryParentChain).map((level) =>
+				level.filter((item) => !blockedParentIds.has(item.id)),
+			),
+		[blockedParentIds, categories, categoryParentChain],
+	);
 	const selectedProduct = selectedProductId ? productDetails[selectedProductId] : null;
 	const selectedUser = usersPage?.items.find((item) => item.id === selectedUserId) ?? null;
 	const selectedOrder = ordersPage?.items.find((item) => item.id === selectedOrderId) ?? null;
+	const productImages = selectedProduct?.images ?? pendingImages;
+	const productDescriptions = selectedProduct?.descriptions ?? pendingDescriptions;
+	const productCharacteristics = selectedProduct?.characteristicItems ?? pendingCharacteristics;
 
 	const tabs = useMemo(
 		() =>
@@ -416,6 +513,7 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 				admin ? { key: 'users', label: 'Пользователи', icon: <Users2 size={16} /> } : null,
 				{ key: 'products', label: 'Товары', icon: <Boxes size={16} /> },
 				{ key: 'brands', label: 'Бренды', icon: <Tags size={16} /> },
+				admin ? { key: 'news', label: 'Новости', icon: <Newspaper size={16} /> } : null,
 				admin ? { key: 'categories', label: 'Категории', icon: <FolderTree size={16} /> } : null,
 				admin ? { key: 'orders', label: 'Заказы', icon: <ShoppingCart size={16} /> } : null,
 				admin ? { key: 'currencies', label: 'Валюты', icon: <Coins size={16} /> } : null,
@@ -473,6 +571,16 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 		const detail = await getProduct(user.token, productId);
 		setProductDetails((current) => ({ ...current, [productId]: detail }));
 		setSelectedProductId(productId);
+		setProductCategoryDraftId('');
+		setPendingImages([]);
+		setPendingDescriptions([]);
+		setPendingCharacteristics([]);
+		setEditingImageId(null);
+		setEditingDescriptionId(null);
+		setEditingCharacteristicId(null);
+		setImageForm(emptyImageForm);
+		setDescriptionForm(emptyDescriptionForm);
+		setCharacteristicForm(emptyCharacteristicForm);
 		setProductForm({
 			name: detail.name,
 			sku: detail.sku ?? '',
@@ -494,6 +602,12 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 	async function loadBrandsData() {
 		const page = await getBrands(user.token, { page: 1, pageSize: 200 });
 		setBrandsPage(page);
+	}
+
+	async function loadNewsData() {
+		if (!admin) return;
+		const items = await getNewsItems(user.token);
+		setNewsItems(items);
 	}
 
 	async function loadCategoriesData() {
@@ -537,7 +651,14 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 			];
 
 			if (admin) {
-				jobs.push(loadDashboardData(), loadUsers(), loadOrders(), loadNotificationsData(), loadImportsData());
+				jobs.push(
+					loadDashboardData(),
+					loadUsers(),
+					loadOrders(),
+					loadNewsData(),
+					loadNotificationsData(),
+					loadImportsData(),
+				);
 			}
 
 			await Promise.all(jobs);
@@ -565,6 +686,13 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 		setOrderStatusDraft(selectedOrder.status);
 	}, [selectedOrder]);
 
+	useEffect(() => {
+		setCategoryForm((current) => ({
+			...current,
+			parentId: categoryParentChain.at(-1) ?? '',
+		}));
+	}, [categoryParentChain]);
+
 	function resetProductEditor() {
 		setSelectedProductId(null);
 		setProductForm({
@@ -577,12 +705,16 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 			isActive: true,
 			categoryIds: [],
 		});
+		setProductCategoryDraftId('');
 		setEditingImageId(null);
 		setEditingDescriptionId(null);
 		setEditingCharacteristicId(null);
 		setImageForm(emptyImageForm);
 		setDescriptionForm(emptyDescriptionForm);
 		setCharacteristicForm(emptyCharacteristicForm);
+		setPendingImages([]);
+		setPendingDescriptions([]);
+		setPendingCharacteristics([]);
 	}
 
 	function resetBrandEditor() {
@@ -590,9 +722,15 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 		setBrandForm(emptyBrandForm);
 	}
 
+	function resetNewsEditor() {
+		setEditingNewsId(null);
+		setNewsForm(emptyNewsForm);
+	}
+
 	function resetCategoryEditor() {
 		setEditingCategoryId(null);
 		setCategoryForm(emptyCategoryForm);
+		setCategoryParentChain([]);
 	}
 
 	function resetCurrencyEditor() {
@@ -604,6 +742,61 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 		setter(list.includes(id) ? list.filter((item) => item !== id) : [...list, id]);
 	}
 
+	function addSelectedCategoryToProduct() {
+		if (!productCategoryDraftId) return;
+		setProductForm((current) => ({
+			...current,
+			categoryIds: current.categoryIds.includes(productCategoryDraftId)
+				? current.categoryIds
+				: [...current.categoryIds, productCategoryDraftId],
+		}));
+		setProductCategoryDraftId('');
+	}
+
+	function removeSelectedCategoryFromProduct(categoryId: string) {
+		setProductForm((current) => ({
+			...current,
+			categoryIds: current.categoryIds.filter((item) => item !== categoryId),
+		}));
+	}
+
+	function updateCategoryParentSelection(levelIndex: number, value: string) {
+		if (!value) {
+			setCategoryParentChain((current) => current.slice(0, levelIndex));
+			return;
+		}
+
+		setCategoryParentChain((current) => [...current.slice(0, levelIndex), value]);
+	}
+
+	async function persistPendingProductData(productId: string) {
+		for (const image of pendingImages) {
+			await saveProductImage(user.token, productId, {
+				imageUrl: image.imageUrl,
+				isMain: image.isMain,
+				sortOrder: image.sortOrder,
+			});
+		}
+
+		for (const description of pendingDescriptions) {
+			await saveProductDescription(user.token, productId, {
+				type: description.type,
+				content: description.content,
+				sortOrder: description.sortOrder,
+			});
+		}
+
+		for (const characteristic of pendingCharacteristics) {
+			await saveProductCharacteristic(user.token, productId, {
+				name: characteristic.name,
+				value: characteristic.value,
+				unit: characteristic.unit,
+				type: characteristic.type,
+				sortOrder: characteristic.sortOrder,
+			});
+		}
+	}
+
 	async function handleSaveProduct() {
 		await runAction(
 			'save-product',
@@ -611,6 +804,10 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 				const saved = selectedProductId
 					? await updateProduct(user.token, selectedProductId, productForm)
 					: await createProduct(user.token, productForm);
+
+				if (!selectedProductId) {
+					await persistPendingProductData(saved.id);
+				}
 
 				await loadProducts();
 				await loadProductDetails(saved.id);
@@ -652,12 +849,24 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 	}
 
 	async function handleSaveImage() {
-		if (!selectedProductId) return;
 		await runAction(
 			'save-image',
 			async () => {
-				await saveProductImage(user.token, selectedProductId, imageForm, editingImageId);
-				await loadProductDetails(selectedProductId);
+				if (selectedProductId) {
+					await saveProductImage(user.token, selectedProductId, imageForm, editingImageId);
+					await loadProductDetails(selectedProductId);
+				} else {
+					const nextItem: PendingProductImage = {
+						id: editingImageId ?? `pending-image-${Date.now()}`,
+						imageUrl: imageForm.imageUrl,
+						isMain: imageForm.isMain,
+						sortOrder: imageForm.sortOrder,
+					};
+					setPendingImages((current) => {
+						const withoutEdited = current.filter((item) => item.id !== nextItem.id);
+						return [...withoutEdited, nextItem].sort((a, b) => a.sortOrder - b.sortOrder);
+					});
+				}
 				setEditingImageId(null);
 				setImageForm(emptyImageForm);
 			},
@@ -666,12 +875,24 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 	}
 
 	async function handleSaveDescription() {
-		if (!selectedProductId) return;
 		await runAction(
 			'save-description',
 			async () => {
-				await saveProductDescription(user.token, selectedProductId, descriptionForm, editingDescriptionId);
-				await loadProductDetails(selectedProductId);
+				if (selectedProductId) {
+					await saveProductDescription(user.token, selectedProductId, descriptionForm, editingDescriptionId);
+					await loadProductDetails(selectedProductId);
+				} else {
+					const nextItem: PendingProductDescription = {
+						id: editingDescriptionId ?? `pending-description-${Date.now()}`,
+						type: descriptionForm.type,
+						content: descriptionForm.content,
+						sortOrder: descriptionForm.sortOrder,
+					};
+					setPendingDescriptions((current) => {
+						const withoutEdited = current.filter((item) => item.id !== nextItem.id);
+						return [...withoutEdited, nextItem].sort((a, b) => a.sortOrder - b.sortOrder);
+					});
+				}
 				setEditingDescriptionId(null);
 				setDescriptionForm(emptyDescriptionForm);
 			},
@@ -680,17 +901,31 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 	}
 
 	async function handleSaveCharacteristic() {
-		if (!selectedProductId) return;
 		await runAction(
 			'save-characteristic',
 			async () => {
-				await saveProductCharacteristic(
-					user.token,
-					selectedProductId,
-					characteristicForm,
-					editingCharacteristicId,
-				);
-				await loadProductDetails(selectedProductId);
+				if (selectedProductId) {
+					await saveProductCharacteristic(
+						user.token,
+						selectedProductId,
+						characteristicForm,
+						editingCharacteristicId,
+					);
+					await loadProductDetails(selectedProductId);
+				} else {
+					const nextItem: PendingProductCharacteristic = {
+						id: editingCharacteristicId ?? `pending-characteristic-${Date.now()}`,
+						name: characteristicForm.name,
+						value: characteristicForm.value,
+						unit: characteristicForm.unit ?? null,
+						type: characteristicForm.type,
+						sortOrder: characteristicForm.sortOrder,
+					};
+					setPendingCharacteristics((current) => {
+						const withoutEdited = current.filter((item) => item.id !== nextItem.id);
+						return [...withoutEdited, nextItem].sort((a, b) => a.sortOrder - b.sortOrder);
+					});
+				}
 				setEditingCharacteristicId(null);
 				setCharacteristicForm(emptyCharacteristicForm);
 			},
@@ -699,16 +934,25 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 	}
 
 	async function handleDeleteNested(kind: 'image' | 'description' | 'characteristic', id: string) {
-		if (!selectedProductId) return;
 		if (!window.confirm('Удалить элемент?')) return;
 
 		await runAction(
 			`delete-${kind}`,
 			async () => {
-				if (kind === 'image') await deleteProductImage(user.token, selectedProductId, id);
-				if (kind === 'description') await deleteProductDescription(user.token, selectedProductId, id);
-				if (kind === 'characteristic') await deleteProductCharacteristic(user.token, selectedProductId, id);
-				await loadProductDetails(selectedProductId);
+				if (selectedProductId) {
+					if (kind === 'image') await deleteProductImage(user.token, selectedProductId, id);
+					if (kind === 'description') await deleteProductDescription(user.token, selectedProductId, id);
+					if (kind === 'characteristic') await deleteProductCharacteristic(user.token, selectedProductId, id);
+					await loadProductDetails(selectedProductId);
+				} else {
+					if (kind === 'image') setPendingImages((current) => current.filter((item) => item.id !== id));
+					if (kind === 'description') {
+						setPendingDescriptions((current) => current.filter((item) => item.id !== id));
+					}
+					if (kind === 'characteristic') {
+						setPendingCharacteristics((current) => current.filter((item) => item.id !== id));
+					}
+				}
 			},
 			'Элемент удален.',
 		);
@@ -740,6 +984,57 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 				await loadBrandsData();
 			},
 			'Бренд удален.',
+		);
+	}
+
+	async function handleSaveNews() {
+		const title = newsForm.title.trim();
+		const content = newsForm.content.trim();
+
+		if (!title) {
+			setNotice({ type: 'error', text: 'Укажите название новости.' });
+			return;
+		}
+
+		if (!content) {
+			setNotice({ type: 'error', text: 'Укажите содержание новости.' });
+			return;
+		}
+
+		const payload: SaveNewsPayload = {
+			title,
+			content,
+			imageUrl: newsForm.imageUrl?.trim() ? newsForm.imageUrl.trim() : null,
+		};
+
+		await runAction(
+			'save-news',
+			async () => {
+				if (editingNewsId) {
+					await updateNewsItem(user.token, editingNewsId, payload);
+				} else {
+					await createNewsItem(user.token, payload);
+				}
+
+				await loadNewsData();
+				resetNewsEditor();
+			},
+			editingNewsId ? 'Новость обновлена.' : 'Новость создана.',
+		);
+	}
+
+	async function handleDeleteNews(newsId: string) {
+		if (!window.confirm('Удалить новость?')) return;
+		await runAction(
+			'delete-news',
+			async () => {
+				await deleteNewsItem(user.token, newsId);
+				await loadNewsData();
+				if (editingNewsId === newsId) {
+					resetNewsEditor();
+				}
+			},
+			'Новость удалена.',
 		);
 	}
 
@@ -960,6 +1255,14 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 			`import-${vendor}`,
 			async () => {
 				await importVendor(user.token, vendor);
+				await Promise.all([
+					loadProducts(),
+					loadBrandsData(),
+					loadCategoriesData(),
+					loadCurrenciesData(),
+					loadDashboardData(),
+					loadImportsData(),
+				]);
 			},
 			`Импорт ${vendor} завершен.`,
 		);
@@ -970,6 +1273,14 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 			'import-all',
 			async () => {
 				await importAllVendors(user.token);
+				await Promise.all([
+					loadProducts(),
+					loadBrandsData(),
+					loadCategoriesData(),
+					loadCurrenciesData(),
+					loadDashboardData(),
+					loadImportsData(),
+				]);
 			},
 			'Импорт всех поставщиков завершен.',
 		);
@@ -1228,6 +1539,52 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 
 										<div>
 											<label className="mb-1 block text-sm text-slate-500">Роль</label>
+											<div className="mb-3 hidden space-y-3">
+												<div className="flex gap-2">
+													<select
+														className={inputClass}
+														value={productCategoryDraftId}
+														onChange={(event) => setProductCategoryDraftId(event.target.value)}
+													>
+														<option value="">Выберите категорию</option>
+														{flattenedCategories.map((category) => (
+															<option key={category.id} value={category.id}>
+																{`${'— '.repeat(category.depth)}${category.name}`}
+															</option>
+														))}
+													</select>
+													<Button variant="secondary" onClick={addSelectedCategoryToProduct}>
+														+
+													</Button>
+												</div>
+												<div className="space-y-2">
+													{productForm.categoryIds.length > 0 ? (
+														productForm.categoryIds.map((categoryId) => {
+															const category = flattenedCategories.find((item) => item.id === categoryId);
+															if (!category) return null;
+
+															return (
+																<div
+																	key={category.id}
+																	className="flex items-center justify-between gap-3 border border-slate-200 px-3 py-2 text-sm"
+																>
+																	<div className="text-slate-700">
+																		{`${'— '.repeat(category.depth)}${category.name}`}
+																	</div>
+																	<Button
+																		variant="ghost"
+																		onClick={() => removeSelectedCategoryFromProduct(category.id)}
+																	>
+																		Удалить
+																	</Button>
+																</div>
+															);
+														})
+													) : (
+														<p className="text-sm text-slate-500">Категории пока не выбраны.</p>
+													)}
+												</div>
+											</div>
 											<select
 												className={inputClass}
 												value={userRoleDraft}
@@ -1243,8 +1600,55 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 
 										<div>
 											<label className="mb-1 block text-sm text-slate-500">Бренды владельца</label>
+											<div className="mb-3 hidden space-y-3">
+												<div className="flex gap-2">
+													<select
+														className={inputClass}
+														value={productCategoryDraftId}
+														onChange={(event) => setProductCategoryDraftId(event.target.value)}
+													>
+														<option value="">Выберите категорию</option>
+														{flattenedCategories.map((category) => (
+															<option key={category.id} value={category.id}>
+																{`${'— '.repeat(category.depth)}${category.name}`}
+															</option>
+														))}
+													</select>
+													<Button variant="secondary" onClick={addSelectedCategoryToProduct}>
+														+
+													</Button>
+												</div>
+												<div className="space-y-2">
+													{productForm.categoryIds.length > 0 ? (
+														productForm.categoryIds.map((categoryId) => {
+															const category = flattenedCategories.find((item) => item.id === categoryId);
+															if (!category) return null;
+
+															return (
+																<div
+																	key={category.id}
+																	className="flex items-center justify-between gap-3 border border-slate-200 px-3 py-2 text-sm"
+																>
+																	<div className="text-slate-700">
+																		{`${'— '.repeat(category.depth)}${category.name}`}
+																	</div>
+																	<Button
+																		variant="ghost"
+																		onClick={() => removeSelectedCategoryFromProduct(category.id)}
+																	>
+																		Удалить
+																	</Button>
+																</div>
+															);
+														})
+													) : (
+														<p className="text-sm text-slate-500">Категории пока не выбраны.</p>
+													)}
+												</div>
+											</div>
 											<select
 												multiple
+												hidden
 												className={`${inputClass} min-h-36`}
 												value={userBrandDraft}
 												onChange={(event) => setUserBrandDraft(readMultiValue(event))}
@@ -1547,8 +1951,55 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 										</div>
 										<div className="md:col-span-2">
 											<label className="mb-1 block text-sm text-slate-500">Категории</label>
+											<div className="mb-3 space-y-3">
+												<div className="flex gap-2">
+													<select
+														className={inputClass}
+														value={productCategoryDraftId}
+														onChange={(event) => setProductCategoryDraftId(event.target.value)}
+													>
+														<option value="">Выберите категорию</option>
+														{flattenedCategories.map((category) => (
+															<option key={category.id} value={category.id}>
+																{`${'— '.repeat(category.depth)}${category.name}`}
+															</option>
+														))}
+													</select>
+													<Button variant="secondary" onClick={addSelectedCategoryToProduct}>
+														+
+													</Button>
+												</div>
+												<div className="space-y-2">
+													{productForm.categoryIds.length > 0 ? (
+														productForm.categoryIds.map((categoryId) => {
+															const category = flattenedCategories.find((item) => item.id === categoryId);
+															if (!category) return null;
+
+															return (
+																<div
+																	key={category.id}
+																	className="flex items-center justify-between gap-3 border border-slate-200 px-3 py-2 text-sm"
+																>
+																	<div className="text-slate-700">
+																		{`${'— '.repeat(category.depth)}${category.name}`}
+																	</div>
+																	<Button
+																		variant="ghost"
+																		onClick={() => removeSelectedCategoryFromProduct(category.id)}
+																	>
+																		Удалить
+																	</Button>
+																</div>
+															);
+														})
+													) : (
+														<p className="text-sm text-slate-500">Категории пока не выбраны.</p>
+													)}
+												</div>
+											</div>
 											<select
 												multiple
+												hidden
 												className={`${inputClass} min-h-36`}
 												value={productForm.categoryIds}
 												onChange={(event) =>
@@ -1604,7 +2055,7 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 								<div className="space-y-6">
 									<div className={`${sectionClass} p-5`}>
 										<h3 className="text-base font-semibold text-slate-950">Изображения</h3>
-										{selectedProduct ? (
+										{selectedProduct || !selectedProductId ? (
 											<>
 												<div className="mt-4 grid gap-3">
 													<input
@@ -1667,7 +2118,7 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 													)}
 												</div>
 												<div className="mt-4 space-y-2">
-													{selectedProduct.images.map((image) => (
+													{productImages.map((image) => (
 														<div
 															key={image.id}
 															className="flex items-center justify-between gap-3 border border-slate-200 px-3 py-2 text-sm"
@@ -1712,7 +2163,7 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 
 									<div className={`${sectionClass} p-5`}>
 										<h3 className="text-base font-semibold text-slate-950">Описания</h3>
-										{selectedProduct ? (
+										{selectedProduct || !selectedProductId ? (
 											<>
 												<div className="mt-4 grid gap-3">
 													<select
@@ -1774,7 +2225,7 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 													)}
 												</div>
 												<div className="mt-4 space-y-2">
-													{selectedProduct.descriptions.map((description) => (
+													{productDescriptions.map((description) => (
 														<div key={description.id} className="border border-slate-200 px-3 py-3 text-sm">
 															<div className="flex items-center justify-between gap-3">
 																<div className="font-medium text-slate-900">
@@ -1819,7 +2270,7 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 
 									<div className={`${sectionClass} p-5`}>
 										<h3 className="text-base font-semibold text-slate-950">Характеристики</h3>
-										{selectedProduct ? (
+										{selectedProduct || !selectedProductId ? (
 											<>
 												<div className="mt-4 grid gap-3">
 													<div className="grid gap-3 md:grid-cols-2">
@@ -1909,7 +2360,7 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 													)}
 												</div>
 												<div className="mt-4 space-y-2">
-													{selectedProduct.characteristicItems.map((characteristic) => (
+													{productCharacteristics.map((characteristic) => (
 														<div
 															key={characteristic.id}
 															className="flex items-center justify-between gap-3 border border-slate-200 px-3 py-2 text-sm"
@@ -2113,6 +2564,121 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 						</div>
 					)}
 
+					{activeTab === 'news' && admin && (
+						<div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
+							<div className={`${sectionClass} p-5`}>
+								<div className="flex flex-wrap items-center justify-between gap-3">
+									<div>
+										<h2 className="text-lg font-semibold text-slate-950">Новости</h2>
+										<p className="mt-1 text-sm text-slate-500">
+											Публикации, которые выводятся на главной странице сайта.
+										</p>
+									</div>
+									<div className="text-sm text-slate-500">Всего: {newsItems.length}</div>
+								</div>
+
+								<div className="mt-4 space-y-3">
+									{newsItems.length > 0 ? (
+										newsItems.map((news) => (
+											<div
+												key={news.id}
+												className="rounded-xl border border-slate-200 px-4 py-4 transition hover:border-slate-300"
+											>
+												<div className="flex flex-wrap items-start justify-between gap-3">
+													<div className="min-w-0 flex-1">
+														<button
+															type="button"
+															className="text-left text-base font-semibold text-slate-900 transition hover:text-slate-700"
+															onClick={() => {
+																setEditingNewsId(news.id);
+																setNewsForm({
+																	title: news.title,
+																	content: news.content,
+																	imageUrl: news.imageUrl ?? '',
+																});
+															}}
+														>
+															{news.title}
+														</button>
+														<p className="mt-2 text-sm text-slate-600">
+															{news.content.length > 180 ? `${news.content.slice(0, 180)}...` : news.content}
+														</p>
+														<div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+															<span>{formatDate(news.createdAt)}</span>
+															<span>{news.imageUrl ? 'Есть изображение' : 'Без изображения'}</span>
+														</div>
+													</div>
+													<Button
+														variant="ghost"
+														onClick={() => void handleDeleteNews(news.id)}
+														loading={busyAction === 'delete-news'}
+													>
+														Удалить
+													</Button>
+												</div>
+											</div>
+										))
+									) : (
+										<div className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-sm text-slate-500">
+											Новости пока не добавлены.
+										</div>
+									)}
+								</div>
+							</div>
+
+							<div className={`${sectionClass} p-5`}>
+								<h2 className="text-lg font-semibold text-slate-950">
+									{editingNewsId ? 'Редактирование новости' : 'Новая новость'}
+								</h2>
+								<div className="mt-4 space-y-3">
+									<input
+										className={inputClass}
+										placeholder="Название"
+										value={newsForm.title}
+										onChange={(event) =>
+											setNewsForm((current) => ({ ...current, title: event.target.value }))
+										}
+									/>
+									<textarea
+										className={textareaClass}
+										placeholder="Содержание"
+										value={newsForm.content}
+										onChange={(event) =>
+											setNewsForm((current) => ({ ...current, content: event.target.value }))
+										}
+									/>
+									<input
+										className={inputClass}
+										placeholder="Картинка URL (опционально)"
+										value={newsForm.imageUrl ?? ''}
+										onChange={(event) =>
+											setNewsForm((current) => ({ ...current, imageUrl: event.target.value }))
+										}
+									/>
+								</div>
+								<div className="mt-5 flex flex-wrap gap-2">
+									<Button onClick={() => void handleSaveNews()} loading={busyAction === 'save-news'}>
+										{editingNewsId ? 'Сохранить' : 'Создать'}
+									</Button>
+									{editingNewsId && (
+										<>
+											<Button
+												variant="secondary"
+												onClick={() => void handleDeleteNews(editingNewsId)}
+												loading={busyAction === 'delete-news'}
+											>
+												Удалить
+											</Button>
+											<Button variant="ghost" onClick={resetNewsEditor}>
+												Сбросить
+											</Button>
+										</>
+									)}
+								</div>
+							</div>
+						</div>
+					)}
+
 					{activeTab === 'categories' && admin && (
 						<div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
 							<div className={`${sectionClass} p-5`}>
@@ -2164,6 +2730,9 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 															className="text-left font-medium text-slate-900"
 															onClick={() => {
 																setEditingCategoryId(category.id);
+																setCategoryParentChain(
+																	category.parentId ? buildCategoryLineage(categories, category.parentId) : [],
+																);
 																setCategoryForm({
 																	name: category.name,
 																	logoUrl: category.logoUrl ?? '',
@@ -2206,8 +2775,31 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 											setCategoryForm((current) => ({ ...current, logoUrl: event.target.value }))
 										}
 									/>
+									<div className="space-y-3">
+										<div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+											Выберите родительскую категорию по уровням. Если родитель не нужен, оставьте только
+											{' '}
+											&laquo;Корневая категория&raquo;.
+										</div>
+										{categoryLevels.map((levelItems, levelIndex) => (
+											<select
+												key={`category-parent-level-${levelIndex}`}
+												className={inputClass}
+												value={categoryParentChain[levelIndex] ?? ''}
+												onChange={(event) => updateCategoryParentSelection(levelIndex, event.target.value)}
+											>
+												<option value="">{levelIndex === 0 ? 'Корневая категория' : 'Остановиться на этом уровне'}</option>
+												{levelItems.map((category) => (
+													<option key={category.id} value={category.id}>
+														{category.name}
+													</option>
+												))}
+											</select>
+										))}
+									</div>
 									<select
 										className={inputClass}
+										hidden
 										value={categoryForm.parentId ?? ''}
 										onChange={(event) =>
 											setCategoryForm((current) => ({
@@ -2325,7 +2917,7 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 													key={order.id}
 													className={[
 														'border-t border-slate-200 text-slate-700',
-														selectedOrderId === order.id ? 'bg-slate-50' : '',
+														getOrderRowClass(order.status, selectedOrderId === order.id),
 													].join(' ')}
 												>
 													<td className="py-3 pr-4">
@@ -2365,6 +2957,9 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 											<div>
 												<span className="text-slate-400">Создан:</span>{' '}
 												{formatDate(selectedOrder.createdAt)}
+											</div>
+											<div>
+												<span className="text-slate-400">Email:</span> {selectedOrder.customerEmail || 'Не указан'}
 											</div>
 											<div>
 												<span className="text-slate-400">Обновлен:</span>{' '}

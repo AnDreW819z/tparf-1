@@ -34,7 +34,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             name: product.name,
             price: product.price,
             currencyCode: product.currencyCode,
-            imageUrl: product.images?.find((image) => image.isMain)?.imageUrl,
+            imageUrl: product.images?.find((image) => image.isMain)?.imageUrl ?? product.images?.[0]?.imageUrl,
             brandName: product.brandName,
         })) ?? [];
 

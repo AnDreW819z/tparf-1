@@ -1,9 +1,7 @@
-// src/entities/cart/ui/QuickQuantityModal.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
-import { toast } from 'sonner';
 
 interface QuickQuantityModalProps {
     isOpen: boolean;
@@ -14,12 +12,12 @@ interface QuickQuantityModalProps {
 }
 
 export function QuickQuantityModal({
-                                       isOpen,
-                                       onClose,
-                                       currentQuantity,
-                                       onQuantityChange,
-                                       loading
-                                   }: QuickQuantityModalProps) {
+    isOpen,
+    onClose,
+    currentQuantity,
+    onQuantityChange,
+    loading,
+}: QuickQuantityModalProps) {
     const [inputValue, setInputValue] = useState(currentQuantity.toString());
     const [isValid, setIsValid] = useState(true);
 
@@ -32,9 +30,9 @@ export function QuickQuantityModal({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const numValue = parseInt(inputValue);
+        const numValue = Number.parseInt(inputValue, 10);
 
-        if (isNaN(numValue) || numValue < 1) {
+        if (Number.isNaN(numValue) || numValue < 1) {
             setIsValid(false);
             return;
         }
@@ -45,7 +43,7 @@ export function QuickQuantityModal({
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
-            handleSubmit(e as unknown);
+            handleSubmit(e as unknown as React.FormEvent);
         }
         if (e.key === 'Escape') {
             onClose();
@@ -58,16 +56,13 @@ export function QuickQuantityModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-            <div className="relative bg-white rounded-xl shadow-2xl max-w-sm w-full max-h-[90vh] overflow-hidden">
-                {/* Header */}
-                <div className="p-6 pb-4 border-b border-gray-200">
+            <div className="relative max-h-[90vh] w-full max-w-sm overflow-hidden rounded-[1.5rem] bg-white shadow-2xl">
+                <div className="border-b border-gray-200 p-6 pb-4">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                            Быстрое количество
-                        </h3>
+                        <h3 className="text-lg font-semibold text-gray-900">Быстрое количество</h3>
                         <button
                             onClick={onClose}
-                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                            className="rounded-lg p-1.5 transition-colors hover:bg-gray-100"
                             disabled={loading}
                         >
                             <X className="h-5 w-5 text-gray-500" />
@@ -75,13 +70,10 @@ export function QuickQuantityModal({
                     </div>
                 </div>
 
-                {/* Form */}
                 <form onSubmit={handleSubmit} className="p-6">
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Введите количество
-                            </label>
+                            <label className="mb-2 block text-sm font-medium text-gray-700">Введите количество</label>
                             <input
                                 type="number"
                                 min="1"
@@ -91,35 +83,27 @@ export function QuickQuantityModal({
                                     setIsValid(true);
                                 }}
                                 onKeyDown={handleKeyDown}
-                                className={`
-                                    w-full px-4 py-3 border rounded-xl text-lg font-semibold
-                                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                                    transition-all duration-200
-                                    ${!isValid ? 'border-red-300 ring-1 ring-red-200 bg-red-50' : 'border-gray-200'}
-                                    disabled:bg-gray-50 disabled:text-gray-500
-                                `}
+                                className={`w-full rounded-xl border px-4 py-3 text-lg font-semibold transition-all duration-200 focus:border-[#e7dc12] focus:ring-2 focus:ring-[#e7dc12]/30 ${
+                                    !isValid ? 'border-red-300 ring-1 ring-red-200 bg-red-50' : 'border-gray-200'
+                                } disabled:bg-gray-50 disabled:text-gray-500`}
                                 disabled={loading}
                                 autoFocus
                             />
-                            {!isValid && (
-                                <p className="mt-1 text-sm text-red-600">
-                                    Введите число больше 0
-                                </p>
-                            )}
+                            {!isValid && <p className="mt-1 text-sm text-red-600">Введите число больше 0</p>}
                         </div>
 
                         <div className="flex gap-3 pt-2">
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-50"
+                                className="button-brand-secondary flex-1 px-4 py-2.5 text-sm font-medium disabled:opacity-50"
                                 disabled={loading}
                             >
                                 Отмена
                             </button>
                             <button
                                 type="submit"
-                                className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                className="button-brand-primary flex flex-1 items-center justify-center px-4 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
                                 disabled={loading}
                             >
                                 {loading ? 'Сохранение...' : 'Изменить'}

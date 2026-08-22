@@ -1,10 +1,14 @@
 'use client';
 
+import { Search, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { Search, X } from 'lucide-react';
 
-export function HeaderSearch() {
+interface HeaderSearchProps {
+    compact?: boolean;
+}
+
+export function HeaderSearch({ compact = false }: HeaderSearchProps) {
     const router = useRouter();
     const [query, setQuery] = useState('');
 
@@ -17,6 +21,10 @@ export function HeaderSearch() {
 
         router.push(`/search?SearchQuery=${encodeURIComponent(normalizedQuery)}`);
     }
+
+    const inputClass = compact
+        ? 'h-9 rounded-full border-white/10 bg-white px-9 pr-10 text-sm text-slate-900 focus:border-[var(--primary-yellow1)] focus:ring-2 focus:ring-[rgba(221,213,33,0.2)]'
+        : 'h-10 rounded-full border-white/12 bg-white px-9 pr-10 text-sm text-slate-900 focus:border-white focus:ring-2 focus:ring-white/20';
 
     return (
         <div className="min-w-0 flex-1">
@@ -33,7 +41,7 @@ export function HeaderSearch() {
                     onChange={(event) => setQuery(event.target.value)}
                     type="search"
                     placeholder="Поиск товаров"
-                    className="h-10 w-full rounded-md border border-white/15 bg-white px-9 pr-10 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-2 focus:ring-white/30"
+                    className={`w-full border outline-none transition ${inputClass}`}
                     aria-label="Поиск товаров"
                 />
                 {!query && (

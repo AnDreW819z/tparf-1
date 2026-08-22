@@ -74,7 +74,7 @@ export default async function CategoryByIdPage({
             name: p.name,
             price: p.price,
             currencyCode: p.currencyCode,
-            imageUrl: p.images?.find((i) => i.isMain)?.imageUrl ,
+            imageUrl: p.images?.find((i) => i.isMain)?.imageUrl ?? p.images?.[0]?.imageUrl,
             brandName: p.brandName,
         })) ?? [];
 

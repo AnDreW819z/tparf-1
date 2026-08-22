@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { getCart, removeFromCart as removeFromCartApi, updateCartItem as updateCartItemApi } from '@/shared/api/services/cart';
+import { calculateKnownTotal } from '@/shared/lib/price';
 
 export type CartImage = {
     id: string;
@@ -15,6 +16,7 @@ export type CartItemType = {
     quantity: number;
     price: number;
     unitPrice: number;
+    totalPrice: number;
     currencyCode: string;
     brandId: string | null;
     brandName: string | null;
@@ -73,7 +75,7 @@ export const useCartStore = create<CartState>((set, get) => ({
         // Оптимистичное обновление UI
         const updatedItems = cart.items.filter(item => item.productId !== productId);
         const newItemCount = updatedItems.reduce((acc, item) => acc + item.quantity, 0);
-        const newTotalPrice = updatedItems.reduce((acc, item) => acc + item.price, 0);
+        const newTotalPrice = calculateKnownTotal(updatedItems);
 
         set({
             cart: {
@@ -105,13 +107,13 @@ export const useCartStore = create<CartState>((set, get) => ({
         const updatedItems = cart.items.map(item => {
             if (item.productId === productId) {
                 const newPrice = item.unitPrice * quantity;
-                return { ...item, quantity, price: newPrice };
+                return { ...item, quantity, totalPrice: newPrice };
             }
             return item;
         }).filter(item => item.quantity > 0);
 
         const newItemCount = updatedItems.reduce((acc, item) => acc + item.quantity, 0);
-        const newTotalPrice = updatedItems.reduce((acc, item) => acc + item.price, 0);
+        const newTotalPrice = calculateKnownTotal(updatedItems);
 
         set({
             cart: {

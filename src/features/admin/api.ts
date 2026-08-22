@@ -97,6 +97,14 @@ export type Product = {
 	createdAt: string;
 };
 
+export type NewsItem = {
+	id: string;
+	title: string;
+	content: string;
+	imageUrl: string | null;
+	createdAt: string;
+};
+
 export type OrderItem = {
 	id: string;
 	productId: string;
@@ -113,6 +121,7 @@ export type OrderItem = {
 export type Order = {
 	id: string;
 	orderNumber: string;
+	customerEmail?: string | null;
 	status: number;
 	totalAmount: number;
 	items: OrderItem[];
@@ -256,6 +265,12 @@ export type SaveTemplatePayload = {
 	subject: string;
 	body: string;
 	type: number;
+};
+
+export type SaveNewsPayload = {
+	title: string;
+	content: string;
+	imageUrl?: string | null;
 };
 
 export type BulkEmailPayload = {
@@ -560,6 +575,33 @@ export async function getCurrencies(token: string, filters?: FilterParams) {
 		params: buildFilterParams(filters),
 	});
 	return data;
+}
+
+export async function getNewsItems(token: string) {
+	const { data } = await api.get<NewsItem[]>('news', {
+		headers: authHeaders(token),
+	});
+	return data;
+}
+
+export async function createNewsItem(token: string, payload: SaveNewsPayload) {
+	const { data } = await api.post<NewsItem>('news', payload, {
+		headers: authHeaders(token),
+	});
+	return data;
+}
+
+export async function updateNewsItem(token: string, newsId: string, payload: SaveNewsPayload) {
+	const { data } = await api.put<NewsItem>(`news/${newsId}`, { id: newsId, ...payload }, {
+		headers: authHeaders(token),
+	});
+	return data;
+}
+
+export async function deleteNewsItem(token: string, newsId: string) {
+	await api.delete(`news/${newsId}`, {
+		headers: authHeaders(token),
+	});
 }
 
 export async function createCurrency(token: string, payload: SaveCurrencyPayload) {

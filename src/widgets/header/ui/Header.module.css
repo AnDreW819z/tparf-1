@@ -1,4 +1,3 @@
-/* src/widgets/header/ui/Header.module.css */
 .header {
     position: sticky;
     top: 0;
@@ -6,38 +5,214 @@
     background-color: #142037;
     color: #ffffff;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 28px rgba(20, 32, 55, 0.16);
 }
-.inner {
-    max-width: 80rem; /* 1280px */
+
+.mainbar {
+    min-height: 64px;
+}
+
+.mainbarInner {
+    max-width: 80rem;
     margin: 0 auto;
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 1rem;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 64px;
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    justify-self: center;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.logo {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+}
+
+.desktopNav,
+.desktopSearch,
+.desktopActions {
+    display: none;
+}
+
+.desktopNav {
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.desktopNavLink {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0 0.95rem;
+    border-radius: 999px;
+    color: rgba(241, 245, 249, 0.92);
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.desktopNavLink:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.desktopSearch {
+    min-width: 320px;
+}
+
+.desktopActions {
+    justify-content: flex-end;
+}
+
+.mobileActions {
     display: flex;
     align-items: center;
+    gap: 0.5rem;
+}
+
+.mobileSearchRow {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mobileSearchInner {
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 0.5rem 1rem 0.75rem;
+}
+
+.iconButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #ffffff;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.iconButton:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.mobileOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: rgba(15, 23, 42, 0.54);
+    cursor: pointer;
+}
+
+.drawer {
+    position: relative;
+    width: min(86vw, 360px);
+    height: 100%;
+    padding: 1rem;
+    background: #142037;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 16px 0 42px rgba(15, 23, 42, 0.35);
+}
+
+.drawerHeader {
+    display: flex;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
 }
 
-.lc {
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.lc>*:not(:last-child) {
-    margin-right: 1rem;
-}
-
-.nav {
-    display: flex;
-    margin-right: 12px;
-}
-
-.nav a {
+.drawerTitle {
+    font-size: 1.05rem;
+    font-weight: 700;
     color: #ffffff;
 }
-.nav a:hover {
-    text-decoration: underline;
+
+.drawerSubtitle {
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: rgba(226, 232, 240, 0.72);
 }
-.nav a:not(:last-child) {
-    margin-right: 1rem;
+
+.drawerNav {
+    margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.drawerLink {
+    display: block;
+    padding: 0.9rem 1rem;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+
+.drawerLink:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+@media (min-width: 768px) {
+    .mainbar {
+        min-height: 72px;
+    }
+
+    .mainbarInner {
+        grid-template-columns: auto auto minmax(320px, 1fr) auto;
+        gap: 1rem;
+        min-height: 72px;
+    }
+
+    .brand {
+        justify-self: start;
+    }
+
+    .logo {
+        width: 96px;
+        height: 96px;
+    }
+
+    .iconButton:first-child {
+        display: none;
+    }
+
+    .desktopNav,
+    .desktopActions {
+        display: flex;
+    }
+
+    .desktopSearch {
+        display: block;
+    }
+
+    .mobileActions,
+    .mobileSearchRow {
+        display: none;
+    }
 }

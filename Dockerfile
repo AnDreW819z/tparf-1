@@ -16,7 +16,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Устанавливаем ВСЕ зависимости (включая dev для сборки)
-RUN npm ci
+RUN npm install
 
 # Stage 2: Build
 FROM node:20-alpine AS builder
@@ -30,7 +30,9 @@ COPY . .
 # Переменные окружения для сборки
 # NEXT_PUBLIC_* переменные вшиваются в bundle на этапе сборки
 ARG NEXT_PUBLIC_API_BASE_URL=/api/
+ARG API_BASE_URL_INTERNAL=https://tparf-api.ru/api/
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ENV API_BASE_URL_INTERNAL=$API_BASE_URL_INTERNAL
 
 # Собираем проект
 RUN npm run build

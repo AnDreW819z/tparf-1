@@ -1,52 +1,136 @@
 'use client';
-import Image from 'next/image';
-import { useMemo, useState } from 'react';
+
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ImageWithFallback } from '@/shared/ui/image/ImageWithFallback';
 
-export function ProductGallery({
-                                   images,
-                                   alt,
-                               }: {
-    images: { id: string; imageUrl: string; isMain: boolean; sortOrder: number }[];
+type ProductGalleryImage = {
+    id: string;
+    imageUrl: string;
+    isMain: boolean;
+    sortOrder: number;
+};
+
+interface ProductGalleryProps {
+    images: ProductGalleryImage[];
     alt: string;
-}) {
+}
+
+export function ProductGallery({ images, alt }: ProductGalleryProps) {
     const ordered = useMemo(
         () =>
-            [...images].sort((a, b) => (Number(b.isMain) - Number(a.isMain)) || a.sortOrder - b.sortOrder),
-        [images]
+            [...images].sort(
+                (a, b) => Number(b.isMain) - Number(a.isMain) || a.sortOrder - b.sortOrder,
+            ),
+        [images],
     );
-    const [active, setActive] = useState(ordered[0]?.imageUrl);
+    const [activeIndex, setActiveIndex] = useState(0);
+    const thumbnailsRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setActiveIndex(0);
+    }, [ordered.length]);
+
+    const activeImage = ordered[activeIndex];
+
+    const moveSelection = (direction: 1 | -1) => {
+        if (ordered.length === 0) return;
+
+        setActiveIndex((current) => {
+            const next = current + direction;
+            if (next < 0) return ordered.length - 1;
+            if (next >= ordered.length) return 0;
+            return next;
+        });
+    };
+
+    const scrollThumbnails = (offset: number) => {
+        thumbnailsRef.current?.scrollBy({ left: offset, behavior: 'smooth' });
+    };
 
     return (
-        <div className="flex flex-col gap-3">
-            <div className="relative aspect-square w-full overflow-hidden rounded border bg-white">
-                <ImageWithFallback
-                    src={active}
-                    alt={alt}
-                    fill
-                    className="object-contain"
-                    sizes="(min-width:1280px) 40vw, (min-width:1024px) 50vw, 100vw"
-                />
+        <div className="min-w-0 w-full max-w-full space-y-4">
+            <div className="min-w-0 w-full max-w-full rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="relative mx-auto aspect-square w-full max-w-full overflow-hidden rounded-3xl bg-slate-50 p-3 lg:max-h-[460px]">
+                    <ImageWithFallback
+                        src={activeImage?.imageUrl}
+                        alt={alt}
+                        fill
+                        className="max-w-full object-contain p-3"
+                        sizes="(min-width:1024px) 50vw, 100vw"
+                    />
+
+                    {ordered.length > 1 && (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => moveSelection(-1)}
+                                className="button-brand-primary absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full p-0 sm:h-11 sm:w-11"
+                                aria-label="Предыдущее изображение"
+                            >
+                                <ChevronLeft className="h-5 w-5" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => moveSelection(1)}
+                                className="button-brand-primary absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full p-0 sm:h-11 sm:w-11"
+                                aria-label="Следующее изображение"
+                            >
+                                <ChevronRight className="h-5 w-5" />
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
+
             {ordered.length > 1 && (
-                <div className="grid grid-cols-4 gap-2">
-                    {ordered.map((img) => (
-                        <button
-                            key={img.id}
-                            type="button"
-                            onClick={() => setActive(img.imageUrl)}
-                            className={`relative aspect-square overflow-hidden rounded border ${active === img.imageUrl ? 'ring-2 ring-blue-500' : ''}`}
-                            aria-label="Предпросмотр изображения"
-                        >
-                            <Image
-                                src={img.imageUrl}
-                                alt={alt}
-                                fill
-                                className="object-cover"
-                                sizes="100px"
-                            />
-                        </button>
-                    ))}
+                <div className="min-w-0 w-full max-w-full rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="mb-3 flex min-w-0 items-center justify-between gap-3">
+                        <div className="min-w-0 text-sm font-medium text-slate-700">Галерея</div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => scrollThumbnails(-180)}
+                                className="button-brand-secondary flex h-9 w-9 items-center justify-center rounded-full p-0"
+                                aria-label="Прокрутить миниатюры назад"
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => scrollThumbnails(180)}
+                                className="button-brand-secondary flex h-9 w-9 items-center justify-center rounded-full p-0"
+                                aria-label="Прокрутить миниатюры вперед"
+                            >
+                                <ChevronRight className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div ref={thumbnailsRef} className="flex gap-2 overflow-x-auto pb-2 sm:gap-3">
+                        {ordered.map((image, index) => (
+                            <button
+                                key={image.id}
+                                type="button"
+                                onClick={() => setActiveIndex(index)}
+                                className={[
+                                    'relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border bg-white p-1.5 sm:h-20 sm:w-20 sm:p-2',
+                                    activeIndex === index
+                                        ? 'border-[#e7dc12] ring-2 ring-[#e7dc12]'
+                                        : 'border-slate-200',
+                                ].join(' ')}
+                                aria-label={`Показать изображение ${index + 1}`}
+                            >
+                                <ImageWithFallback
+                                    src={image.imageUrl}
+                                    alt={alt}
+                                    fill
+                                    className="max-w-full object-contain p-1"
+                                    sizes="80px"
+                                />
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>

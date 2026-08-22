@@ -1,18 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useCartStore } from '@/shared/store/useCartStore';
-import { CartItemDeleteButton } from '@/shared/ui/CartItemDeleteButton';
-import { QuickQuantityModal } from '@/entities/cart/ui/QuickQuantityModal';
-import { toast } from 'sonner';
-import { Pencil } from 'lucide-react';
 import Image from 'next/image';
-import type { CartItemType } from '@/shared/store/useCartStore';
+import Link from 'next/link';
+import { useState } from 'react';
+import { Pencil } from 'lucide-react';
+import { QuickQuantityModal } from '@/entities/cart/ui/QuickQuantityModal';
+import { formatProductPrice, isRequestPrice } from '@/shared/lib/price';
+import { useCartStore, type CartItemType } from '@/shared/store/useCartStore';
+import { CartItemDeleteButton } from '@/shared/ui/CartItemDeleteButton';
+import { toast } from 'sonner';
 
 interface Props {
     item: CartItemType;
     token: string;
+}
+
+function getErrorMessage(error: unknown) {
+    if (error instanceof Error && error.message) {
+        return error.message;
+    }
+
+    return 'Ошибка при изменении количества';
 }
 
 export default function CartItem({ item, token }: Props) {
@@ -28,19 +36,17 @@ export default function CartItem({ item, token }: Props) {
 
         try {
             if (newQuantity <= 0) {
-                // ✅ Используем метод из store с синхронизацией
                 await removeItem(token, item.productId);
                 toast.success('Товар удален из корзины');
                 return;
             }
 
-            // ✅ Используем метод из store с синхронизацией
             await updateQuantity(token, item.productId, newQuantity);
             setQuantity(newQuantity);
             toast.success('Количество обновлено');
-        } catch (err: any) {
-            console.error('Ошибка:', err);
-            toast.error(err.message || 'Ошибка при изменении количества');
+        } catch (error) {
+            console.error('Ошибка:', error);
+            toast.error(getErrorMessage(error));
             setQuantity(item.quantity);
         } finally {
             setLoading(false);
@@ -48,15 +54,17 @@ export default function CartItem({ item, token }: Props) {
     }
 
     const handleQuickQuantity = (newQuantity: number) => {
-        handleQuantityChange(newQuantity);
+        void handleQuantityChange(newQuantity);
     };
 
-    // ✅ Безопасное получение imageUrl БЕЗ non-null assertion
-    const mainImageUrl = item.images.find((i) => i.isMain)?.imageUrl ||
-        item.images[0]?.imageUrl;
+    const mainImageUrl = item.images.find((image) => image.isMain)?.imageUrl || item.images[0]?.imageUrl;
+    const isRequestItem = isRequestPrice(item.unitPrice);
+    const totalLabel = isRequestItem
+        ? 'по запросу'
+        : formatProductPrice(item.unitPrice * quantity, item.currencyCode);
 
     return (
-        <div className="relative rounded border border-[#DDDDDD] p-4 bg-white flex gap-4 group">
+        <div className="group relative flex gap-4 rounded border border-[#DDDDDD] bg-white p-4">
             <CartItemDeleteButton productId={item.productId} token={token} />
 
             {mainImageUrl && (
@@ -65,56 +73,52 @@ export default function CartItem({ item, token }: Props) {
                     alt={item.productName}
                     width={100}
                     height={100}
-                    className="w-24 h-24 object-cover rounded"
+                    className="h-24 w-24 rounded object-cover"
                 />
             )}
 
             <div className="flex-1">
                 <div className="font-medium text-blue-600 hover:underline">
-                    <Link href={`/product/${item.productId}`}>
-                        {item.productName}
-                    </Link>
+                    <Link href={`/product/${item.productId}`}>{item.productName}</Link>
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="mt-1 text-sm text-gray-500">
                     Артикул: {item.productId} · {item.brandName ?? ''}
                 </div>
-                <div className="text-sm text-gray-500 mt-1">
-                    Цена за ед.: {item.unitPrice.toLocaleString('ru-RU')} {item.currencyCode}
+                <div className="mt-1 text-sm text-gray-500">
+                    Цена за ед.: {formatProductPrice(item.unitPrice, item.currencyCode)}
                 </div>
                 <div className="mt-2 flex items-center justify-between text-sm text-gray-600">
                     <div className="flex items-center gap-2">
                         <span>Количество:</span>
                         <div className="flex items-center gap-1">
                             <button
-                                onClick={() => handleQuantityChange(quantity - 1)}
-                                className="w-8 h-8 rounded border px-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors flex items-center justify-center"
+                                onClick={() => void handleQuantityChange(quantity - 1)}
+                                className="flex h-8 w-8 items-center justify-center rounded border px-2 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                                 disabled={loading}
                             >
-                                −
+                                -
                             </button>
-                            <span className="w-10 text-center font-medium bg-gray-100 rounded px-2 py-1">
+                            <span className="w-10 rounded bg-gray-100 px-2 py-1 text-center font-medium">
                                 {quantity}
                             </span>
                             <button
-                                onClick={() => handleQuantityChange(quantity + 1)}
-                                className="w-8 h-8 rounded border px-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors flex items-center justify-center"
+                                onClick={() => void handleQuantityChange(quantity + 1)}
+                                className="flex h-8 w-8 items-center justify-center rounded border px-2 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                                 disabled={loading}
                             >
                                 +
                             </button>
                             <button
                                 onClick={() => setShowQuickModal(true)}
-                                className="w-8 h-8 rounded border border-gray-300 p-1.5 hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm transition-all flex items-center justify-center disabled:opacity-50"
+                                className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 p-1.5 transition-all hover:border-blue-300 hover:bg-blue-50 hover:shadow-sm disabled:opacity-50"
                                 disabled={loading}
                                 title="Быстрое количество"
                             >
-                                <Pencil className="h-3.5 w-3.5 text-gray-500 hover:text-blue-600 transition-colors" />
+                                <Pencil className="h-3.5 w-3.5 text-gray-500 transition-colors hover:text-blue-600" />
                             </button>
                         </div>
                     </div>
-                    <span className="font-semibold text-gray-800">
-                        Итого: {(item.unitPrice * quantity).toLocaleString('ru-RU')} {item.currencyCode}
-                    </span>
+                    <span className="font-semibold text-gray-800">Итого: {totalLabel}</span>
                 </div>
             </div>
 

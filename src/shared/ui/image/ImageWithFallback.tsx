@@ -1,43 +1,41 @@
 'use client';
-import { useState, useEffect } from 'react';
-import Image, { ImageProps } from 'next/image';
+
+import { useEffect, useState } from 'react';
+import Image, { type ImageProps } from 'next/image';
 
 type Props = Omit<ImageProps, 'src'> & {
     src: string | undefined;
     fallbackSrc?: string;
 };
 
-const ALLOWED_REMOTE_HOSTS = new Set([
-    'petropump.ru',
-    'fotobank.eltreco.ru',
-    'gate.skatpower.ru',
-    'sts-rf.ru',
-    'kedrweld.ru',
-    'cdn.ibot.by',
-]);
-
 function resolveSafeImageSrc(src: string | undefined, fallbackSrc: string) {
     if (!src) {
         return fallbackSrc;
     }
 
-    if (src.startsWith('/')) {
-        return src;
+    const normalized = src.trim();
+    if (!normalized) {
+        return fallbackSrc;
+    }
+
+    if (normalized.startsWith('/')) {
+        return normalized;
     }
 
     try {
-        const url = new URL(src);
+        const withProtocol = normalized.startsWith('//') ? `https:${normalized}` : normalized;
+        const url = new URL(withProtocol);
         const isAllowedProtocol = url.protocol === 'http:' || url.protocol === 'https:';
-        const isAllowedHost = ALLOWED_REMOTE_HOSTS.has(url.hostname);
 
-        return isAllowedProtocol && isAllowedHost ? src : fallbackSrc;
+        return isAllowedProtocol ? url.toString() : fallbackSrc;
     } catch {
         return fallbackSrc;
     }
 }
 
-export function ImageWithFallback({ src, fallbackSrc = '/placeholder.png', ...rest }: Props) {
+export function ImageWithFallback({ src, alt, fallbackSrc = '/placeholder.png', ...rest }: Props) {
     const [imgSrc, setImgSrc] = useState(resolveSafeImageSrc(src, fallbackSrc));
+
     useEffect(() => {
         setImgSrc(resolveSafeImageSrc(src, fallbackSrc));
     }, [src, fallbackSrc]);
@@ -45,13 +43,13 @@ export function ImageWithFallback({ src, fallbackSrc = '/placeholder.png', ...re
     return (
         <Image
             {...rest}
-            src={imgSrc as string}
+            alt={alt ?? ''}
+            src={imgSrc}
             onError={() => setImgSrc(fallbackSrc)}
             onLoadingComplete={(result) => {
-                // если браузер вернул «битое» изображение нулевой ширины — переключаемся на фолбек
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-expect-error
-                if ((result as unknown).naturalWidth === 0) setImgSrc(fallbackSrc);
+                if (result.naturalWidth === 0) {
+                    setImgSrc(fallbackSrc);
+                }
             }}
         />
     );

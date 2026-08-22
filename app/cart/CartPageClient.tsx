@@ -1,7 +1,7 @@
 // app/cart/CartPageClient.tsx
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useCartStore, type CartResponse } from '@/shared/store/useCartStore';
 import type { User } from '@/shared/api/services/auth';
 import CartItemsList from '@/entities/cart/ui/CartItemsList';
@@ -26,16 +26,6 @@ export default function CartPageClient({ cart, user }: CartPageClientProps) {
         setCart(cart);
     }, [cart, setCart]);
 
-    const currencyCode = useMemo(() => {
-        const firstItem = cartState?.items[0] || cart.items[0];
-        return firstItem?.currencyCode || 'RUB';
-    }, [cartState, cart]);
-
-    const totalAmount = useMemo(() => {
-        const currentItems = cartState?.items || cart.items;
-        return currentItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    }, [cartState, cart]);
-
     const currentCart = cartState || cart;
 
     return (
@@ -47,11 +37,7 @@ export default function CartPageClient({ cart, user }: CartPageClientProps) {
                 <>
                     <CartItemsList items={currentCart.items} token={token} />
                     {/* ✅ Передаем token в CartSummary */}
-                    <CartSummary
-                        totalAmount={totalAmount}
-                        currencyCode={currencyCode}
-                        token={token}
-                    />
+                    <CartSummary items={currentCart.items} token={token} />
                 </>
             )}
         </section>

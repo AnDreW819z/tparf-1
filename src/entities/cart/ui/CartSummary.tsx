@@ -1,78 +1,73 @@
-// src/entities/cart/ui/CartSummary.tsx
 'use client';
 
 import { useTransition } from 'react';
-import Link from 'next/link';
-import { useCartStore } from '@/shared/store/useCartStore';
-import { createOrderFromCart } from '@/shared/api/services/orders';
-import { toast } from 'sonner';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
+import { createOrderFromCart } from '@/shared/api/services/orders';
+import { calculateKnownTotal, formatCartTotal, hasRequestPriceItems } from '@/shared/lib/price';
+import { useCartStore, type CartItemType } from '@/shared/store/useCartStore';
+import { toast } from 'sonner';
 
 interface Props {
-    totalAmount: number;
-    currencyCode?: string;
-    token: string; // ✅ Добавляем token
+    items: CartItemType[];
+    token: string;
 }
 
-export default function CartSummary({ totalAmount, currencyCode = 'RUB', token }: Props) {
+export default function CartSummary({ items, token }: Props) {
     const [isPending, startTransition] = useTransition();
-    const { fetchCart, setCart } = useCartStore();
+    const { fetchCart } = useCartStore();
+    const totalLabel = formatCartTotal(items);
+    const hasRequestItems = hasRequestPriceItems(items);
+    const knownTotal = calculateKnownTotal(items);
 
     const handleCheckout = () => {
         startTransition(async () => {
             try {
-                // ✅ 1. Создаем заказ из корзины
                 const newOrder = await createOrderFromCart(token);
-
-                // ✅ 2. Очищаем корзину
                 await fetchCart(token);
-
                 toast.success(`Заказ №${newOrder.orderNumber} успешно создан!`);
-
-                // ✅ 3. Перенаправляем на страницу заказов
-                window.location.href = `/orders`;
-            } catch (error: unknown) {
+                window.location.href = '/orders';
+            } catch (error) {
                 console.error('Ошибка создания заказа:', error);
-                toast.error(error.response?.data?.message || 'Ошибка при создании заказа');
+                toast.error('Ошибка при создании заказа');
             }
         });
     };
 
     return (
-        <div className="mt-8 p-6 bg-white rounded-2xl border border-gray-200 shadow-lg">
-            {/* Итоговая сумма */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="text-xl font-semibold text-gray-900">Итого к оплате</div>
-                <div className="text-3xl font-bold text-blue-600">
-                    {totalAmount.toLocaleString('ru-RU')} {currencyCode}
+        <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
+            <div className="mb-6 flex items-center justify-between gap-4">
+                <div className="text-xl font-semibold text-gray-900">Итого к оформлению</div>
+                <div className="text-right">
+                    <div className="text-2xl font-bold text-slate-950 sm:text-3xl">{totalLabel}</div>
+                    {hasRequestItems && knownTotal > 0 && (
+                        <div className="mt-1 text-sm text-slate-500">Есть позиции по запросу</div>
+                    )}
                 </div>
             </div>
 
-            {/* ✅ Кнопка оформления заказа */}
             <button
                 onClick={handleCheckout}
                 disabled={isPending}
-                className="w-full h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold text-lg flex items-center justify-center gap-3 hover:from-blue-700 hover:to-blue-800 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5"
+                className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-[#f2c94c] text-lg font-bold text-slate-950 transition hover:bg-[#e5bc42] disabled:cursor-not-allowed disabled:opacity-50"
             >
                 {isPending ? (
                     <>
-                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-500/30 border-t-slate-900" />
                         Оформляем...
                     </>
                 ) : (
                     <>
                         <ShoppingBag className="h-6 w-6" />
                         Оформить заказ
-                        <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="h-5 w-5" />
                     </>
                 )}
             </button>
 
-            {/* Информация о заказе */}
-            <div className="mt-6 pt-6 border-t border-gray-100">
+            <div className="mt-6 border-t border-gray-100 pt-6">
                 <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                    <span>Сумма заказа &quot;{totalAmount.toLocaleString('ru-RU')}&quot; {currencyCode}</span>
+                    <div className="h-2 w-2 rounded-full bg-[#f2c94c]" />
+                    <span>{hasRequestItems && knownTotal <= 0 ? 'Стоимость уточняется по запросу.' : 'Итог рассчитан по текущим ценам корзины.'}</span>
                 </div>
             </div>
         </div>
