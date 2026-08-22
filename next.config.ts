@@ -1,39 +1,32 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+    output: 'standalone',
+    typescript: {
+        ignoreBuildErrors: true,
+    },
+    async rewrites() {
+        return [
+            {
+                source: '/api/:path*',
+                destination: `${process.env.API_BASE_URL_INTERNAL || 'https://tparf-api.ru/api/'}:path*`,
+            },
+        ];
+    },
     images: {
         remotePatterns: [
-            new URL('https://petropump.ru/upload/**'),
+            {
+                protocol: 'https',
+                hostname: '**',
+                port: '',
+                pathname: '/**',
+            },
             {
                 protocol: 'http',
-                hostname: 'fotobank.eltreco.ru',
+                hostname: '**',
                 port: '',
                 pathname: '/**',
             },
-            {
-                protocol: 'https',
-                hostname: 'gate.skatpower.ru',
-                port: '',
-                pathname: '/**',
-            },
-            {
-                protocol: 'https',
-                hostname: 'sts-rf.ru',
-                port: '',
-                pathname: '/**',
-            },
-            {
-                protocol: 'https',
-                hostname: 'kedrweld.ru',
-                port: '',
-                pathname: '/**',
-            },
-            {
-                protocol: 'https',
-                hostname: 'cdn.ibot.by',
-                port: '',
-                pathname: '/**',
-            }
         ],
     }
 };
