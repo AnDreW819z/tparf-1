@@ -59,8 +59,22 @@ export function RegisterForm() {
                         <label htmlFor="password" className={labelClass}>
                             Пароль *
                         </label>
-                        <input type="password" id="password" name="password" required className={inputClass} />
-                        {state.errors?.password && <p className="mt-2 text-sm text-rose-600">{state.errors.password}</p>}
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            required
+                            minLength={8}
+                            aria-describedby="password-hint"
+                            className={inputClass}
+                        />
+                        {state.errors?.password ? (
+                            <p className="mt-2 text-sm text-rose-600">{state.errors.password}</p>
+                        ) : (
+                            <p id="password-hint" className="mt-2 text-sm text-[#888]">
+                                Не короче 8 символов, хотя бы одна цифра
+                            </p>
+                        )}
                     </div>
 
                     <div>
