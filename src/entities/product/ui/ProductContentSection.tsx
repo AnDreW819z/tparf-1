@@ -6,6 +6,7 @@ import type {
     ProductCharacteristic as ProductCharacteristicItem,
     ProductDescription,
 } from '@/shared/api/services/product';
+import { CollapsibleCard } from './CollapsibleCard';
 import { DescriptionContent } from './ProductDescription';
 import { isPublicCharacteristicVisible, ProductCharacteristics } from './ProductCharacteristics';
 
@@ -132,7 +133,10 @@ function splitDescriptionBlock(block: ProductDescription): ProductDescriptionSec
 
     return rawSections.flatMap((section, index) => {
         const sortOrder = block.sortOrder + index / 100;
-        const contentLines = section.lines.map((line) => line.trim());
+        const contentLines = section.lines
+            .map((line) => line.trim())
+            // В технических разделах строка без букв и цифр («- :») — мусор после разбора фида.
+            .filter((line) => !section.title || !line || /[\p{L}\p{N}]/u.test(line));
 
         if (!section.title) {
             const text = contentLines.join('\n').trim();
@@ -276,9 +280,22 @@ export function ProductContentSection({
     function renderDescriptionSection(section: ProductDescriptionSection) {
         if (section.kind === 'pairs') {
             return (
-                <SectionCard key={section.id} title={section.title}>
+                <CollapsibleCard key={section.id} title={section.title} count={section.pairs.length}>
                     <TechnicalPairs pairs={section.pairs} fallback={section.fallback} />
-                </SectionCard>
+                </CollapsibleCard>
+            );
+        }
+
+        // Комплектация и прочие технические разделы — шторкой, раскрываются по желанию.
+        if (section.title !== 'Описание') {
+            return (
+                <CollapsibleCard
+                    key={section.id}
+                    title={section.title}
+                    count={section.content.split('\n').filter((line) => line.trim()).length}
+                >
+                    <DescriptionContent content={section.content} />
+                </CollapsibleCard>
             );
         }
 

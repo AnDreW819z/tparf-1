@@ -1,6 +1,7 @@
 'use client';
 
 import type { ProductCharacteristic as ProductCharacteristicItem } from '@/shared/api/services/product';
+import { CollapsibleCard } from './CollapsibleCard';
 
 export function isSafeUrl(value: string) {
     try {
@@ -117,18 +118,11 @@ export function ProductCharacteristics({
         return null;
     }
 
-    const isAside = layout === 'aside';
-    const sectionClassName = isAside
-        ? 'w-full max-w-full rounded-md border border-[#e2e2e2] bg-white p-6'
-        : 'w-full max-w-full rounded-md border border-[#e2e2e2] bg-white p-8';
-    const rowClassName = isAside
-        ? 'grid grid-cols-1 gap-1 py-4 xl:grid-cols-[180px_1fr] xl:gap-4'
-        : 'grid grid-cols-1 gap-1 py-4 xl:grid-cols-[180px_1fr] xl:gap-4';
+    const rowClassName = 'grid grid-cols-1 gap-1 py-4 xl:grid-cols-[180px_1fr] xl:gap-4';
 
     return (
-        <section className={sectionClassName}>
-            <h2 className="heading-1 text-xl">{title}</h2>
-            <dl className="mt-6 divide-y divide-[var(--gray-bg)]">
+        <CollapsibleCard title={title} count={normalizedItems.length} compact={layout === 'aside'}>
+            <dl className="divide-y divide-[var(--gray-bg)]">
                 {normalizedItems.map((item) => {
                     const displayValue = item.unit ? `${item.value} ${item.unit}` : item.value;
                     const isUrl = isSafeUrl(item.value);
@@ -154,6 +148,6 @@ export function ProductCharacteristics({
                     );
                 })}
             </dl>
-        </section>
+        </CollapsibleCard>
     );
 }
