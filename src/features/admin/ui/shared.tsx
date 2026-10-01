@@ -56,11 +56,11 @@ export const orderStatusOptions = [
 ];
 
 export const notificationTypeOptions = [
-	{ value: 1, label: 'Welcome' },
-	{ value: 2, label: 'OrderConfirmation' },
-	{ value: 3, label: 'PasswordReset' },
-	{ value: 4, label: 'SystemAlert' },
-	{ value: 5, label: 'BulkEmail' },
+	{ value: 1, label: 'Приветствие' },
+	{ value: 2, label: 'Подтверждение заказа' },
+	{ value: 3, label: 'Сброс пароля' },
+	{ value: 4, label: 'Системное' },
+	{ value: 5, label: 'Рассылка' },
 ];
 
 export const descriptionTypeOptions = [
@@ -80,9 +80,9 @@ export const characteristicTypeOptions = [
 ];
 
 export const roleOptions: { value: AdminRole; label: string }[] = [
-	{ value: 'Administrator', label: 'Administrator' },
-	{ value: 'BrandOwner', label: 'BrandOwner' },
-	{ value: 'User', label: 'User' },
+	{ value: 'User', label: 'Покупатель' },
+	{ value: 'BrandOwner', label: 'Владелец бренда' },
+	{ value: 'Administrator', label: 'Администратор' },
 ];
 
 export const emptyBrandForm: SaveBrandPayload = {

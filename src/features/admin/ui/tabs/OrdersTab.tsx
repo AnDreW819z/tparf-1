@@ -1,22 +1,47 @@
 'use client';
 
-import { Search } from 'lucide-react';
-import { Button } from '@/shared/ui/button/ui/Button';
-import {
-	inputClass,
-	sectionClass,
-	orderStatusOptions,
-	getOrderRowClass,
-	formatDate,
-	formatMoney,
-} from '../shared';
+import { formatDate, formatMoney, orderStatusOptions } from '../shared';
 import { useAdminPanel } from '../useAdminPanelState';
+import {
+	Btn,
+	EditorActions,
+	Empty,
+	Facts,
+	Field,
+	Panel,
+	PanelHeader,
+	Pill,
+	SearchBox,
+	SplitLayout,
+	fieldClass,
+	rowClass,
+	tableClass,
+	tdClass,
+	thClass,
+} from '../kit';
+
+const statusTone: Record<number, 'amber' | 'blue' | 'sky' | 'green' | 'gray'> = {
+	1: 'amber',
+	2: 'blue',
+	3: 'sky',
+	4: 'green',
+	5: 'gray',
+};
+
+function StatusPill({ status }: { status: number }) {
+	const label = orderStatusOptions.find((option) => option.value === status)?.label ?? status;
+	return <Pill tone={statusTone[status] ?? 'gray'}>{label}</Pill>;
+}
+
+const shortDate = (value: string) =>
+	new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value));
 
 export function OrdersTab() {
 	const {
 		busyAction,
 		ordersPage,
 		selectedOrderId,
+		setSelectedOrderId,
 		orderFilters,
 		setOrderFilters,
 		orderStatusDraft,
@@ -27,144 +52,129 @@ export function OrdersTab() {
 		handleSaveOrderStatus,
 	} = useAdminPanel();
 
+	const items = ordersPage?.items ?? [];
+
 	return (
-		<div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(360px,0.7fr)]">
-			<div className={`${sectionClass} p-5`}>
-				<div className="flex flex-wrap items-center justify-between gap-3">
-					<div>
-						<h2 className="text-lg font-semibold text-slate-950">Заказы</h2>
-						<p className="mt-1 text-sm text-slate-500">Просмотр и обработка заказов магазина.</p>
-					</div>
-				</div>
-				<div className="mt-4 flex gap-3">
-					<div className="relative flex-1">
-						<Search size={16} className="pointer-events-none absolute left-3 top-3 text-slate-400" />
-						<input
-							className={`${inputClass} pl-9`}
-							value={orderFilters.searchQuery ?? ''}
-							onChange={(event) =>
-								setOrderFilters((current) => ({
-									...current,
-									searchQuery: event.target.value,
-									page: 1,
-								}))
-							}
-							placeholder="Поиск по номеру заказа"
-						/>
-					</div>
-					<Button
-						variant="secondary"
-						onClick={() => {
-							void loadOrders();
-						}}
-					>
-						Найти
-					</Button>
-				</div>
-				<div className="mt-4 overflow-x-auto">
-					<table className="min-w-full text-sm">
-						<thead className="text-left text-slate-500">
+		<SplitLayout>
+			<Panel>
+				<PanelHeader
+					title="Заказы"
+					count={ordersPage?.totalCount}
+					actions={
+						<div className="w-full sm:w-[260px]">
+							<SearchBox
+								value={orderFilters.searchQuery ?? ''}
+								onChange={(value) => setOrderFilters((current) => ({ ...current, searchQuery: value, page: 1 }))}
+								onSubmit={() => void loadOrders()}
+								placeholder="Номер заказа"
+							/>
+						</div>
+					}
+				/>
+
+				{items.length === 0 ? (
+					<Empty>Заказов не найдено.</Empty>
+				) : (
+					<div className="overflow-x-auto">
+<table className={tableClass}>
+						<colgroup>
+							<col />
+							<col className="w-[130px]" />
+							<col className="w-[126px]" />
+							<col className="w-[108px]" />
+						</colgroup>
+						<thead>
 							<tr>
-								<th className="pb-3 pr-4 font-medium">Заказ</th>
-								<th className="pb-3 pr-4 font-medium">Статус</th>
-								<th className="pb-3 pr-4 font-medium">Сумма</th>
-								<th className="pb-3 font-medium">Дата</th>
+								<th className={thClass}>Заказ</th>
+								<th className={`${thClass} text-right`}>Сумма</th>
+								<th className={thClass}>Статус</th>
+								<th className={thClass}>Дата</th>
 							</tr>
 						</thead>
 						<tbody>
-							{ordersPage?.items.map((order) => (
-								<tr
-									key={order.id}
-									className={[
-										'border-t border-slate-200 text-slate-700',
-										getOrderRowClass(order.status, selectedOrderId === order.id),
-									].join(' ')}
-								>
-									<td className="py-3 pr-4">
-										<button
-											type="button"
-											className="text-left font-medium text-slate-900"
-											onClick={() => {
-												void handleOpenOrder(order.id);
-											}}
-										>
-											{order.orderNumber}
-										</button>
+							{items.map((order) => (
+								<tr key={order.id} className={rowClass(selectedOrderId === order.id)} onClick={() => void handleOpenOrder(order.id)}>
+									<td className={tdClass}>
+										<div className="truncate font-mono text-[13px] font-medium text-[var(--ink)]">{order.orderNumber}</div>
+										<div className="truncate text-[13px] text-[var(--muted)]">{order.customerEmail || 'Email не указан'}</div>
 									</td>
-									<td className="py-3 pr-4">
-										{
-											orderStatusOptions.find((status) => status.value === order.status)
-												?.label
-										}
+									<td className={`${tdClass} text-right font-mono text-[13px]`}>{formatMoney(order.totalAmount)}</td>
+									<td className={tdClass}>
+										<StatusPill status={order.status} />
 									</td>
-									<td className="py-3 pr-4">{formatMoney(order.totalAmount)}</td>
-									<td className="py-3">{formatDate(order.createdAt)}</td>
+									<td className={`${tdClass} font-mono text-[13px] text-[var(--muted)]`}>{shortDate(order.createdAt)}</td>
 								</tr>
 							))}
 						</tbody>
 					</table>
-				</div>
-			</div>
-
-			<div className={`${sectionClass} p-5`}>
-				<h2 className="text-lg font-semibold text-slate-950">Детали заказа</h2>
-				{selectedOrder ? (
-					<div className="mt-4 space-y-4">
-						<div className="space-y-1 text-sm text-slate-600">
-							<div>
-								<span className="text-slate-400">Номер:</span> {selectedOrder.orderNumber}
-							</div>
-							<div>
-								<span className="text-slate-400">Создан:</span>{' '}
-								{formatDate(selectedOrder.createdAt)}
-							</div>
-							<div>
-								<span className="text-slate-400">Email:</span> {selectedOrder.customerEmail || 'Не указан'}
-							</div>
-							<div>
-								<span className="text-slate-400">Обновлен:</span>{' '}
-								{formatDate(selectedOrder.updatedAt)}
-							</div>
-						</div>
-
-						<div>
-							<label className="mb-1 block text-sm text-slate-500">Статус</label>
-							<select
-								className={inputClass}
-								value={orderStatusDraft}
-								onChange={(event) => setOrderStatusDraft(Number(event.target.value))}
-							>
-								{orderStatusOptions.map((option) => (
-									<option key={option.value} value={option.value}>
-										{option.label}
-									</option>
-								))}
-							</select>
-						</div>
-
-						<Button
-							onClick={() => void handleSaveOrderStatus()}
-							loading={busyAction === 'save-order-status'}
-						>
-							Сохранить статус
-						</Button>
-
-						<div className="space-y-2 border-t border-slate-200 pt-4">
-							{selectedOrder.items.map((item) => (
-								<div key={item.id} className="border border-slate-200 px-3 py-3 text-sm">
-									<div className="font-medium text-slate-900">{item.productName}</div>
-									<div className="mt-1 text-slate-600">
-										{item.quantity} шт. · {formatMoney(item.unitPrice, item.currencyCode)} ·{' '}
-										{item.brandName || 'Без бренда'}
-									</div>
-								</div>
-							))}
-						</div>
-					</div>
-				) : (
-					<p className="mt-4 text-sm text-slate-500">Выберите заказ из списка.</p>
+</div>
 				)}
-			</div>
-		</div>
+			</Panel>
+
+			<Panel className="lg:sticky lg:top-4">
+				<PanelHeader title={selectedOrder ? `Заказ ${selectedOrder.orderNumber}` : 'Заказ'} />
+				{selectedOrder ? (
+					<>
+						<div className="space-y-5 px-5 py-4">
+							<Facts
+								items={[
+									['Покупатель', selectedOrder.customerEmail || 'Не указан'],
+									['Создан', formatDate(selectedOrder.createdAt)],
+									['Изменён', formatDate(selectedOrder.updatedAt)],
+									['Сумма', <b key="sum" className="font-mono">{formatMoney(selectedOrder.totalAmount)}</b>],
+								]}
+							/>
+
+							<div>
+								<div className="mb-1.5 text-[13px] font-medium text-[#3D4757]">Состав</div>
+								<ul className="m-0 list-none divide-y divide-[var(--line)] rounded border border-[var(--line)] p-0">
+									{selectedOrder.items.map((item) => (
+										<li key={item.id} className="px-3 py-2 text-sm">
+											<div className="line-clamp-2 text-[var(--ink)]">{item.productName}</div>
+											<div className="mt-0.5 flex justify-between gap-3 text-[13px] text-[var(--muted)]">
+												<span>
+													{item.quantity} шт. × {formatMoney(item.unitPrice, item.currencyCode)}
+												</span>
+												<span className="font-mono text-[var(--ink)]">{formatMoney(item.totalPrice, item.currencyCode)}</span>
+											</div>
+										</li>
+									))}
+									{selectedOrder.items.length === 0 && <li className="px-3 py-2 text-sm text-[var(--muted)]">Позиции не загружены.</li>}
+								</ul>
+							</div>
+
+							<Field label="Статус">
+								<select
+									className={fieldClass}
+									value={orderStatusDraft}
+									onChange={(event) => setOrderStatusDraft(Number(event.target.value))}
+								>
+									{orderStatusOptions.map((option) => (
+										<option key={option.value} value={option.value}>
+											{option.label}
+										</option>
+									))}
+								</select>
+							</Field>
+						</div>
+						<EditorActions>
+							<Btn
+								variant="primary"
+								onClick={() => void handleSaveOrderStatus()}
+								loading={busyAction === 'save-order-status'}
+								disabled={orderStatusDraft === selectedOrder.status}
+							>
+								Сохранить статус
+							</Btn>
+							<Btn variant="ghost" onClick={() => setSelectedOrderId(null)}>
+								Закрыть
+							</Btn>
+						</EditorActions>
+					</>
+				) : (
+					<Empty>Выберите заказ, чтобы посмотреть состав и сменить статус.</Empty>
+				)}
+			</Panel>
+		</SplitLayout>
 	);
 }

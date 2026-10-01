@@ -1,17 +1,32 @@
 'use client';
 
-import { Search } from 'lucide-react';
-import { Button } from '@/shared/ui/button/ui/Button';
 import { type AdminRole } from '@/features/admin/api';
-import {
-	inputClass,
-	sectionClass,
-	roleOptions,
-	readMultiValue,
-	formatDate,
-	SelectionToggle,
-} from '../shared';
+import { formatDate, roleOptions } from '../shared';
 import { useAdminPanel } from '../useAdminPanelState';
+import {
+	ActivePill,
+	Btn,
+	BulkBar,
+	Check,
+	EditorActions,
+	Empty,
+	Facts,
+	Field,
+	Panel,
+	PanelHeader,
+	Pill,
+	RowCheck,
+	SearchBox,
+	SplitLayout,
+	fieldClass,
+	rowClass,
+	tableClass,
+	tdClass,
+	thClass,
+} from '../kit';
+
+const roleLabel = (role?: string) => roleOptions.find((option) => option.value === role)?.label ?? 'Покупатель';
+const roleTone = (role?: string) => (role === 'Administrator' ? 'blue' : role === 'BrandOwner' ? 'sky' : 'gray');
 
 export function UsersTab() {
 	const {
@@ -22,9 +37,6 @@ export function UsersTab() {
 		setSelectedUserId,
 		userFilters,
 		setUserFilters,
-		productForm,
-		productCategoryDraftId,
-		setProductCategoryDraftId,
 		selectedUserIds,
 		setSelectedUserIds,
 		userRoleDraft,
@@ -33,294 +45,170 @@ export function UsersTab() {
 		setUserBrandDraft,
 		userStatusDraft,
 		setUserStatusDraft,
-		flattenedCategories,
 		selectedUser,
 		loadUsers,
 		toggleSelected,
-		addSelectedCategoryToProduct,
-		removeSelectedCategoryFromProduct,
-		handleSaveUserRole,
-		handleSaveUserStatus,
+		handleSaveUser,
 		handleBulkUsers,
 		handleDeleteSelectedUser,
 	} = useAdminPanel();
 
+	const items = usersPage?.items ?? [];
+	const allChecked = items.length > 0 && items.every((item) => selectedUserIds.includes(item.id));
+
 	return (
-		<div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(340px,0.9fr)]">
-			<div className={`${sectionClass} p-5`}>
-				<div className="flex flex-wrap items-center justify-between gap-3">
-					<div>
-						<h2 className="text-lg font-semibold text-slate-950">Пользователи</h2>
-						<p className="mt-1 text-sm text-slate-500">Роли, активность и привязка брендов.</p>
-					</div>
-					<div className="flex flex-wrap gap-2">
-						<Button variant="secondary" onClick={() => void handleBulkUsers('activate')}>
-							Активировать
-						</Button>
-						<Button variant="secondary" onClick={() => void handleBulkUsers('deactivate')}>
-							Деактивировать
-						</Button>
-						<Button variant="secondary" onClick={() => void handleBulkUsers('delete')}>
-							Удалить
-						</Button>
-					</div>
-				</div>
+		<SplitLayout>
+			<Panel>
+				<PanelHeader
+					title="Пользователи"
+					count={usersPage?.totalCount}
+					actions={
+						<div className="w-full sm:w-[280px]">
+							<SearchBox
+								value={userFilters.searchQuery ?? ''}
+								onChange={(value) => setUserFilters((current) => ({ ...current, searchQuery: value, page: 1 }))}
+								onSubmit={() => void loadUsers()}
+								placeholder="Email или компания"
+							/>
+						</div>
+					}
+				/>
 
-				<div className="mt-4 flex gap-3">
-					<div className="relative flex-1">
-						<Search size={16} className="pointer-events-none absolute left-3 top-3 text-slate-400" />
-						<input
-							className={`${inputClass} pl-9`}
-							value={userFilters.searchQuery ?? ''}
-							onChange={(event) =>
-								setUserFilters((current) => ({
-									...current,
-									searchQuery: event.target.value,
-									page: 1,
-								}))
-							}
-							placeholder="Поиск по email, логину, компании"
-						/>
-					</div>
-					<Button
-						variant="secondary"
-						onClick={() => {
-							void loadUsers();
-						}}
-					>
-						Найти
-					</Button>
-				</div>
+				<BulkBar count={selectedUserIds.length} onClear={() => setSelectedUserIds([])}>
+					<Btn onClick={() => void handleBulkUsers('activate')} loading={busyAction === 'bulk-users-activate'}>
+						Активировать
+					</Btn>
+					<Btn onClick={() => void handleBulkUsers('deactivate')} loading={busyAction === 'bulk-users-deactivate'}>
+						Отключить
+					</Btn>
+					<Btn variant="danger" onClick={() => void handleBulkUsers('delete')} loading={busyAction === 'bulk-users-delete'}>
+						Удалить
+					</Btn>
+				</BulkBar>
 
-				<div className="mt-4 overflow-x-auto">
-					<table className="min-w-full text-sm">
-						<thead className="text-left text-slate-500">
+				{items.length === 0 ? (
+					<Empty>Никого не нашли.</Empty>
+				) : (
+					<div className="overflow-x-auto">
+<table className={tableClass}>
+						<colgroup>
+							<col className="w-[52px]" />
+							<col />
+							<col className="w-[160px]" />
+							<col className="w-[112px]" />
+						</colgroup>
+						<thead>
 							<tr>
-								<th className="pb-3 pr-4 font-medium"></th>
-								<th className="pb-3 pr-4 font-medium">Email</th>
-								<th className="pb-3 pr-4 font-medium">Компания</th>
-								<th className="pb-3 pr-4 font-medium">Роль</th>
-								<th className="pb-3 font-medium">Активен</th>
+								<th className={thClass}>
+									<RowCheck
+										label="Выбрать всех"
+										checked={allChecked}
+										onChange={() => setSelectedUserIds(allChecked ? [] : items.map((item) => item.id))}
+									/>
+								</th>
+								<th className={thClass}>Компания и email</th>
+								<th className={thClass}>Роль</th>
+								<th className={thClass}>Статус</th>
 							</tr>
 						</thead>
 						<tbody>
-							{usersPage?.items.map((item) => (
-								<tr
-									key={item.id}
-									className={[
-										'border-t border-slate-200 text-slate-700',
-										selectedUserId === item.id ? 'bg-slate-50' : '',
-									].join(' ')}
-								>
-									<td className="py-3 pr-4">
-										<SelectionToggle
+							{items.map((item) => (
+								<tr key={item.id} className={rowClass(selectedUserId === item.id)} onClick={() => setSelectedUserId(item.id)}>
+									<td className={tdClass}>
+										<RowCheck
+											label={`Выбрать ${item.email}`}
 											checked={selectedUserIds.includes(item.id)}
-											onChange={() =>
-												toggleSelected(selectedUserIds, item.id, setSelectedUserIds)
-											}
+											onChange={() => toggleSelected(selectedUserIds, item.id, setSelectedUserIds)}
 										/>
 									</td>
-									<td className="py-3 pr-4">
-										<button
-											type="button"
-											className="text-left font-medium text-slate-900"
-											onClick={() => setSelectedUserId(item.id)}
-										>
-											{item.email}
-										</button>
+									<td className={tdClass}>
+										<div className="truncate font-medium text-[var(--ink)]">{item.companyName || 'Без компании'}</div>
+										<div className="truncate text-[13px] text-[var(--muted)]">{item.email}</div>
 									</td>
-									<td className="py-3 pr-4">{item.companyName || '-'}</td>
-									<td className="py-3 pr-4">{item.roles.join(', ') || 'User'}</td>
-									<td className="py-3">{item.isActive ? 'Да' : 'Нет'}</td>
+									<td className={tdClass}>
+										<Pill tone={roleTone(item.roles[0])}>{roleLabel(item.roles[0])}</Pill>
+									</td>
+									<td className={tdClass}>
+										<ActivePill active={item.isActive} off="Отключён" />
+									</td>
 								</tr>
 							))}
 						</tbody>
 					</table>
-				</div>
-			</div>
+</div>
+				)}
+			</Panel>
 
-			<div className={`${sectionClass} p-5`}>
-				<h2 className="text-lg font-semibold text-slate-950">Профиль пользователя</h2>
+			<Panel className="lg:sticky lg:top-4">
+				<PanelHeader title={selectedUser ? selectedUser.companyName || selectedUser.email : 'Пользователь'} />
 				{selectedUser ? (
-					<div className="mt-4 space-y-4">
-						<div className="space-y-1 text-sm text-slate-600">
-							<div>
-								<span className="text-slate-400">Email:</span> {selectedUser.email}
-							</div>
-							<div>
-								<span className="text-slate-400">Компания:</span>{' '}
-								{selectedUser.companyName || '-'}
-							</div>
-							<div>
-								<span className="text-slate-400">ИНН:</span> {selectedUser.inn || '-'}
-							</div>
-							<div>
-								<span className="text-slate-400">Создан:</span>{' '}
-								{formatDate(selectedUser.createdAt)}
-							</div>
-						</div>
-
-						<div>
-							<label className="mb-1 block text-sm text-slate-500">Роль</label>
-							<div className="mb-3 hidden space-y-3">
-								<div className="flex gap-2">
-									<select
-										className={inputClass}
-										value={productCategoryDraftId}
-										onChange={(event) => setProductCategoryDraftId(event.target.value)}
-									>
-										<option value="">Выберите категорию</option>
-										{flattenedCategories.map((category) => (
-											<option key={category.id} value={category.id}>
-												{`${'— '.repeat(category.depth)}${category.name}`}
-											</option>
-										))}
-									</select>
-									<Button variant="secondary" onClick={addSelectedCategoryToProduct}>
-										+
-									</Button>
-								</div>
-								<div className="space-y-2">
-									{productForm.categoryIds.length > 0 ? (
-										productForm.categoryIds.map((categoryId) => {
-											const category = flattenedCategories.find((item) => item.id === categoryId);
-											if (!category) return null;
-
-											return (
-												<div
-													key={category.id}
-													className="flex items-center justify-between gap-3 border border-slate-200 px-3 py-2 text-sm"
-												>
-													<div className="text-slate-700">
-														{`${'— '.repeat(category.depth)}${category.name}`}
-													</div>
-													<Button
-														variant="ghost"
-														onClick={() => removeSelectedCategoryFromProduct(category.id)}
-													>
-														Удалить
-													</Button>
-												</div>
-											);
-										})
-									) : (
-										<p className="text-sm text-slate-500">Категории пока не выбраны.</p>
-									)}
-								</div>
-							</div>
-							<select
-								className={inputClass}
-								value={userRoleDraft}
-								onChange={(event) => setUserRoleDraft(event.target.value as AdminRole)}
-							>
-								{roleOptions.map((option) => (
-									<option key={option.value} value={option.value}>
-										{option.label}
-									</option>
-								))}
-							</select>
-						</div>
-
-						<div>
-							<label className="mb-1 block text-sm text-slate-500">Бренды владельца</label>
-							<div className="mb-3 hidden space-y-3">
-								<div className="flex gap-2">
-									<select
-										className={inputClass}
-										value={productCategoryDraftId}
-										onChange={(event) => setProductCategoryDraftId(event.target.value)}
-									>
-										<option value="">Выберите категорию</option>
-										{flattenedCategories.map((category) => (
-											<option key={category.id} value={category.id}>
-												{`${'— '.repeat(category.depth)}${category.name}`}
-											</option>
-										))}
-									</select>
-									<Button variant="secondary" onClick={addSelectedCategoryToProduct}>
-										+
-									</Button>
-								</div>
-								<div className="space-y-2">
-									{productForm.categoryIds.length > 0 ? (
-										productForm.categoryIds.map((categoryId) => {
-											const category = flattenedCategories.find((item) => item.id === categoryId);
-											if (!category) return null;
-
-											return (
-												<div
-													key={category.id}
-													className="flex items-center justify-between gap-3 border border-slate-200 px-3 py-2 text-sm"
-												>
-													<div className="text-slate-700">
-														{`${'— '.repeat(category.depth)}${category.name}`}
-													</div>
-													<Button
-														variant="ghost"
-														onClick={() => removeSelectedCategoryFromProduct(category.id)}
-													>
-														Удалить
-													</Button>
-												</div>
-											);
-										})
-									) : (
-										<p className="text-sm text-slate-500">Категории пока не выбраны.</p>
-									)}
-								</div>
-							</div>
-							<select
-								multiple
-								hidden
-								className={`${inputClass} min-h-36`}
-								value={userBrandDraft}
-								onChange={(event) => setUserBrandDraft(readMultiValue(event))}
-								disabled={userRoleDraft !== 'BrandOwner'}
-							>
-								{(brandsPage?.items ?? []).map((brand) => (
-									<option key={brand.id} value={brand.id}>
-										{brand.name}
-									</option>
-								))}
-							</select>
-						</div>
-
-						<label className="flex items-center gap-2 text-sm text-slate-700">
-							<input
-								type="checkbox"
-								checked={userStatusDraft}
-								onChange={(event) => setUserStatusDraft(event.target.checked)}
+					<>
+						<div className="space-y-5 px-5 py-4">
+							<Facts
+								items={[
+									['Email', selectedUser.email],
+									['ИНН', <span key="inn" className="font-mono">{selectedUser.inn || '—'}</span>],
+									['Создан', formatDate(selectedUser.createdAt)],
+								]}
 							/>
-							<span>Активен</span>
-						</label>
 
-						<div className="flex flex-wrap gap-2">
-							<Button
-								onClick={() => void handleSaveUserRole()}
-								loading={busyAction === 'save-user-role'}
-							>
-								Сохранить роль
-							</Button>
-							<Button
-								variant="secondary"
-								onClick={() => void handleSaveUserStatus()}
-								loading={busyAction === 'save-user-status'}
-							>
-								Сохранить статус
-							</Button>
-							<Button
-								variant="secondary"
+							<Field label="Роль">
+								<select
+									className={fieldClass}
+									value={userRoleDraft}
+									onChange={(event) => setUserRoleDraft(event.target.value as AdminRole)}
+								>
+									{roleOptions.map((option) => (
+										<option key={option.value} value={option.value}>
+											{option.label}
+										</option>
+									))}
+								</select>
+							</Field>
+
+							{userRoleDraft === 'BrandOwner' && (
+								<fieldset className="m-0 min-w-0 border-0 p-0">
+									<legend className="mb-1.5 text-[13px] font-medium text-[#3D4757]">Бренды владельца</legend>
+									<div className="flex max-h-44 flex-col gap-1.5 overflow-y-auto rounded border border-[var(--line)] px-3 py-2">
+										{(brandsPage?.items ?? []).map((brand) => (
+											<Check
+												key={brand.id}
+												label={brand.name}
+												checked={userBrandDraft.includes(brand.id)}
+												onChange={(checked) =>
+													setUserBrandDraft((current) =>
+														checked ? [...current, brand.id] : current.filter((id) => id !== brand.id),
+													)
+												}
+											/>
+										))}
+									</div>
+								</fieldset>
+							)}
+
+							<Check label="Аккаунт активен" checked={userStatusDraft} onChange={setUserStatusDraft} />
+						</div>
+						<EditorActions>
+							<Btn variant="primary" onClick={() => void handleSaveUser()} loading={busyAction === 'save-user'}>
+								Сохранить
+							</Btn>
+							<Btn variant="ghost" onClick={() => setSelectedUserId(null)}>
+								Закрыть
+							</Btn>
+							<Btn
+								variant="danger"
+								className="ml-auto"
 								onClick={() => void handleDeleteSelectedUser()}
 								loading={busyAction === 'delete-user'}
 							>
 								Удалить
-							</Button>
-						</div>
-					</div>
+							</Btn>
+						</EditorActions>
+					</>
 				) : (
-					<p className="mt-4 text-sm text-slate-500">Выберите пользователя из списка.</p>
+					<Empty>Выберите пользователя в списке, чтобы изменить роль или отключить аккаунт.</Empty>
 				)}
-			</div>
-		</div>
+			</Panel>
+		</SplitLayout>
 	);
 }

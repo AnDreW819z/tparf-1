@@ -1,10 +1,7 @@
 'use client';
 
-import { RefreshCcw } from 'lucide-react';
-import {
-	AuthenticatedUser,
-	TabButton,
-} from './shared';
+import { RefreshCcw, X } from 'lucide-react';
+import { AuthenticatedUser } from './shared';
 import { DashboardTab } from './tabs/DashboardTab';
 import { UsersTab } from './tabs/UsersTab';
 import { ProductsTab } from './tabs/ProductsTab';
@@ -16,25 +13,17 @@ import { CurrenciesTab } from './tabs/CurrenciesTab';
 import { NotificationsTab } from './tabs/NotificationsTab';
 import { ImportsTab } from './tabs/ImportsTab';
 import { AdminPanelProvider, useAdminPanelState } from './useAdminPanelState';
+import { Btn } from './kit';
 
 export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 	const state = useAdminPanelState(user);
-	const {
-		admin,
-		activeTab,
-		setActiveTab,
-		initializing,
-		notice,
-		tabs,
-		initialize,
-	} = state;
-
+	const { admin, activeTab, setActiveTab, initializing, notice, setNotice, tabs, initialize } = state;
 
 	if (initializing) {
 		return (
 			<section className="px-7 py-10">
 				<div className="rounded-md border border-[var(--line)] px-5 py-8 text-sm text-[var(--muted)]">
-					Загружаем данные админ-панели...
+					Загружаем данные админ-панели…
 				</div>
 			</section>
 		);
@@ -42,73 +31,79 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 
 	return (
 		<AdminPanelProvider value={state}>
-			<section className="px-7 pb-16 pt-7">
-				<div className="mb-8 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-					<div className="flex items-center gap-3">
-						<h1 className="m-0 text-[28px] font-semibold">Панель администратора</h1>
-						<span className="rounded-[3px] bg-[#EAF0F8] px-2.5 py-0.5 text-xs font-semibold text-[var(--primary-blue)]">
+			<section className="px-7 pb-16 pt-6">
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+						<h1 className="m-0 text-2xl font-semibold">Панель администратора</h1>
+						<span className="rounded-[3px] bg-[#EAF0F8] px-2 py-0.5 text-xs font-semibold text-[var(--primary-blue)]">
 							{admin ? 'Администратор' : 'Владелец бренда'}
 						</span>
 					</div>
-					<button
-						type="button"
-						onClick={() => {
-							void initialize();
-						}}
-						className="inline-flex h-10 items-center gap-2 rounded border border-[#C9D0D8] bg-white px-4 text-sm text-[var(--ink)] hover:border-[#8A95A5]"
-					>
-						<RefreshCcw size={16} />
-						Обновить данные
-					</button>
+					<Btn variant="ghost" onClick={() => void initialize()}>
+						<RefreshCcw size={15} aria-hidden="true" />
+						Обновить
+					</Btn>
 				</div>
+
+				<nav
+					aria-label="Разделы админ-панели"
+					role="tablist"
+					className="-mx-1 mt-4 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-[var(--line)] px-1"
+				>
+					{tabs.map((tab) => {
+						const active = activeTab === tab.key;
+						return (
+							<button
+								key={tab.key}
+								type="button"
+								role="tab"
+								aria-selected={active}
+								onClick={() => {
+									setActiveTab(tab.key);
+									// Сообщение относится к прошлому действию — на другой вкладке оно только путает.
+									setNotice(null);
+								}}
+								className={[
+									'-mb-px inline-flex h-11 shrink-0 items-center border-b-2 px-3 text-sm transition',
+									active
+										? 'border-[var(--primary-blue)] font-medium text-[var(--ink)]'
+										: 'border-transparent text-[var(--muted)] hover:text-[var(--ink)]',
+								].join(' ')}
+							>
+								{tab.label}
+							</button>
+						);
+					})}
+				</nav>
 
 				{notice && (
 					<div
+						role={notice.type === 'error' ? 'alert' : 'status'}
 						className={[
-							'mb-6 whitespace-pre-line border px-4 py-3 text-sm',
+							'mt-4 flex items-start gap-3 rounded border px-4 py-2.5 text-sm',
 							notice.type === 'success'
-								? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-								: 'border-rose-200 bg-rose-50 text-rose-700',
+								? 'border-[#ABEFC6] bg-[#ECFDF3] text-[#067647]'
+								: 'border-[#FECDCA] bg-[#FEF3F2] text-[#B42318]',
 						].join(' ')}
 					>
-						{notice.text}
+						<span className="flex-1 whitespace-pre-line">{notice.text}</span>
+						<button type="button" aria-label="Закрыть" onClick={() => setNotice(null)} className="opacity-70 hover:opacity-100">
+							<X size={16} />
+						</button>
 					</div>
 				)}
 
-				<div className="grid gap-10 lg:grid-cols-[210px_minmax(0,1fr)]">
-					<nav aria-label="Разделы админ-панели" className="flex flex-col gap-0.5">
-						{tabs.map((tab) => (
-							<TabButton
-								key={tab.key}
-								active={activeTab === tab.key}
-								icon={tab.icon}
-								label={tab.label}
-								onClick={() => setActiveTab(tab.key)}
-							/>
-						))}
-					</nav>
-
-					<div className="space-y-8">
-						{activeTab === 'dashboard' && admin && <DashboardTab />}
-
-						{activeTab === 'users' && admin && <UsersTab />}
-
-						{activeTab === 'products' && <ProductsTab />}
-
-						{activeTab === 'brands' && <BrandsTab />}
-
-						{activeTab === 'news' && admin && <NewsTab />}
-
-						{activeTab === 'categories' && admin && <CategoriesTab />}
-
-						{activeTab === 'orders' && admin && <OrdersTab />}
-
-						{activeTab === 'currencies' && admin && <CurrenciesTab />}
-
-						{activeTab === 'notifications' && admin && <NotificationsTab />}
-
-						{activeTab === 'imports' && admin && <ImportsTab />}
-					</div>
+				<div className="mt-5">
+					{activeTab === 'dashboard' && admin && <DashboardTab />}
+					{activeTab === 'users' && admin && <UsersTab />}
+					{activeTab === 'products' && <ProductsTab />}
+					{activeTab === 'brands' && <BrandsTab />}
+					{activeTab === 'news' && admin && <NewsTab />}
+					{activeTab === 'categories' && admin && <CategoriesTab />}
+					{activeTab === 'orders' && admin && <OrdersTab />}
+					{activeTab === 'currencies' && admin && <CurrenciesTab />}
+					{activeTab === 'notifications' && admin && <NotificationsTab />}
+					{activeTab === 'imports' && admin && <ImportsTab />}
 				</div>
 			</section>
 		</AdminPanelProvider>

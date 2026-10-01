@@ -1,11 +1,23 @@
 'use client';
 
-import { Button } from '@/shared/ui/button/ui/Button';
-import {
-	inputClass,
-	sectionClass,
-} from '../shared';
+import { Plus } from 'lucide-react';
 import { useAdminPanel } from '../useAdminPanelState';
+import {
+	Btn,
+	Check,
+	EditorActions,
+	Empty,
+	Field,
+	Panel,
+	PanelHeader,
+	Pill,
+	SplitLayout,
+	fieldClass,
+	rowClass,
+	tableClass,
+	tdClass,
+	thClass,
+} from '../kit';
 
 export function CurrenciesTab() {
 	const {
@@ -20,118 +32,126 @@ export function CurrenciesTab() {
 		handleDeleteCurrency,
 	} = useAdminPanel();
 
+	const items = currenciesPage?.items ?? [];
+
 	return (
-		<div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
-			<div className={`${sectionClass} p-5`}>
-				<h2 className="text-lg font-semibold text-slate-950">Валюты</h2>
-				<div className="mt-4 overflow-x-auto">
-					<table className="min-w-full text-sm">
-						<thead className="text-left text-slate-500">
+		<SplitLayout>
+			<Panel>
+				<PanelHeader
+					title="Валюты"
+					count={items.length}
+					actions={
+						editingCurrencyId ? (
+							<Btn onClick={resetCurrencyEditor}>
+								<Plus size={15} aria-hidden="true" />
+								Новая валюта
+							</Btn>
+						) : undefined
+					}
+				/>
+				{items.length === 0 ? (
+					<Empty>Валют пока нет.</Empty>
+				) : (
+					<div className="overflow-x-auto">
+<table className={tableClass}>
+						<colgroup>
+							<col className="w-[90px]" />
+							<col />
+							<col className="w-[130px]" />
+						</colgroup>
+						<thead>
 							<tr>
-								<th className="pb-3 pr-4 font-medium">Код</th>
-								<th className="pb-3 pr-4 font-medium">Название</th>
-								<th className="pb-3 pr-4 font-medium">Курс</th>
-								<th className="pb-3 font-medium">Базовая</th>
+								<th className={thClass}>Код</th>
+								<th className={thClass}>Название</th>
+								<th className={`${thClass} text-right`}>Курс</th>
 							</tr>
 						</thead>
 						<tbody>
-							{currenciesPage?.items.map((currency) => (
-								<tr key={currency.id} className="border-t border-slate-200 text-slate-700">
-									<td className="py-3 pr-4">
-										<button
-											type="button"
-											className="font-medium text-slate-900"
-											onClick={() => {
-												setEditingCurrencyId(currency.id);
-												setCurrencyForm({
-													code: currency.code,
-													name: currency.name,
-													rateToBase: currency.rateToBase,
-													isBase: currency.isBase,
-												});
-											}}
-										>
-											{currency.code}
-										</button>
+							{items.map((currency) => (
+								<tr
+									key={currency.id}
+									className={rowClass(editingCurrencyId === currency.id)}
+									onClick={() => {
+										setEditingCurrencyId(currency.id);
+										setCurrencyForm({
+											code: currency.code,
+											name: currency.name,
+											rateToBase: currency.rateToBase,
+											isBase: currency.isBase,
+										});
+									}}
+								>
+									<td className={`${tdClass} font-mono font-medium`}>{currency.code}</td>
+									<td className={tdClass}>
+										<span className="mr-2">{currency.name}</span>
+										{currency.isBase && <Pill tone="blue">Базовая</Pill>}
 									</td>
-									<td className="py-3 pr-4">{currency.name}</td>
-									<td className="py-3 pr-4">{currency.rateToBase}</td>
-									<td className="py-3">{currency.isBase ? 'Да' : 'Нет'}</td>
+									<td className={`${tdClass} text-right font-mono`}>{currency.rateToBase}</td>
 								</tr>
 							))}
 						</tbody>
 					</table>
-				</div>
-			</div>
+</div>
+				)}
+			</Panel>
 
-			<div className={`${sectionClass} p-5`}>
-				<h2 className="text-lg font-semibold text-slate-950">
-					{editingCurrencyId ? 'Редактирование валюты' : 'Новая валюта'}
-				</h2>
-				<div className="mt-4 space-y-3">
-					<input
-						className={inputClass}
-						placeholder="Код"
-						value={currencyForm.code}
-						onChange={(event) =>
-							setCurrencyForm((current) => ({ ...current, code: event.target.value }))
-						}
-					/>
-					<input
-						className={inputClass}
-						placeholder="Название"
-						value={currencyForm.name}
-						onChange={(event) =>
-							setCurrencyForm((current) => ({ ...current, name: event.target.value }))
-						}
-					/>
-					<input
-						type="number"
-						step="0.0001"
-						className={inputClass}
-						placeholder="Курс к базовой"
-						value={currencyForm.rateToBase}
-						onChange={(event) =>
-							setCurrencyForm((current) => ({
-								...current,
-								rateToBase: Number(event.target.value),
-							}))
-						}
-					/>
-					<label className="flex items-center gap-2 text-sm text-slate-700">
+			<Panel className="lg:sticky lg:top-4">
+				<PanelHeader title={editingCurrencyId ? 'Валюта' : 'Новая валюта'} />
+				<div className="space-y-4 px-5 py-4">
+					<div className="grid grid-cols-[96px_1fr] gap-3">
+						<Field label="Код">
+							<input
+								className={`${fieldClass} font-mono uppercase`}
+								maxLength={3}
+								placeholder="USD"
+								value={currencyForm.code}
+								onChange={(event) => setCurrencyForm((current) => ({ ...current, code: event.target.value.toUpperCase() }))}
+							/>
+						</Field>
+						<Field label="Название">
+							<input
+								className={fieldClass}
+								value={currencyForm.name}
+								onChange={(event) => setCurrencyForm((current) => ({ ...current, name: event.target.value }))}
+							/>
+						</Field>
+					</div>
+					<Field label="Курс к базовой валюте" hint="Сколько рублей стоит одна единица валюты">
 						<input
-							type="checkbox"
-							checked={currencyForm.isBase}
-							onChange={(event) =>
-								setCurrencyForm((current) => ({ ...current, isBase: event.target.checked }))
-							}
+							type="number"
+							step="0.0001"
+							className={`${fieldClass} font-mono`}
+							value={currencyForm.rateToBase}
+							onChange={(event) => setCurrencyForm((current) => ({ ...current, rateToBase: Number(event.target.value) }))}
 						/>
-						<span>Базовая валюта</span>
-					</label>
+					</Field>
+					<Check
+						label="Базовая валюта"
+						checked={currencyForm.isBase}
+						onChange={(checked) => setCurrencyForm((current) => ({ ...current, isBase: checked }))}
+					/>
 				</div>
-				<div className="mt-5 flex flex-wrap gap-2">
-					<Button
-						onClick={() => void handleSaveCurrency()}
-						loading={busyAction === 'save-currency'}
-					>
+				<EditorActions>
+					<Btn variant="primary" onClick={() => void handleSaveCurrency()} loading={busyAction === 'save-currency'}>
 						{editingCurrencyId ? 'Сохранить' : 'Создать'}
-					</Button>
+					</Btn>
 					{editingCurrencyId && (
 						<>
-							<Button
-								variant="secondary"
+							<Btn variant="ghost" onClick={resetCurrencyEditor}>
+								Отмена
+							</Btn>
+							<Btn
+								variant="danger"
+								className="ml-auto"
 								onClick={() => void handleDeleteCurrency(editingCurrencyId)}
 								loading={busyAction === 'delete-currency'}
 							>
 								Удалить
-							</Button>
-							<Button variant="ghost" onClick={resetCurrencyEditor}>
-								Сбросить
-							</Button>
+							</Btn>
 						</>
 					)}
-				</div>
-			</div>
-		</div>
+				</EditorActions>
+			</Panel>
+		</SplitLayout>
 	);
 }

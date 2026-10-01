@@ -878,6 +878,28 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		);
 	}
 
+	/** Роль, бренды владельца и активность — одной кнопкой «Сохранить». Неизменённое не отправляем. */
+	async function handleSaveUser() {
+		if (!selectedUser) return;
+		const currentRole = (selectedUser.roles[0] as AdminRole) || 'User';
+		const currentBrands = selectedUser.brands.map((brand) => brand.id).sort().join(',');
+		const roleChanged = currentRole !== userRoleDraft || currentBrands !== [...userBrandDraft].sort().join(',');
+		const statusChanged = selectedUser.isActive !== userStatusDraft;
+		if (!roleChanged && !statusChanged) {
+			setNotice({ type: 'success', text: 'Изменений нет.' });
+			return;
+		}
+		await runAction(
+			'save-user',
+			async () => {
+				if (roleChanged) await changeAdminUserRole(user.token, selectedUser.id, userRoleDraft, userBrandDraft);
+				if (statusChanged) await updateAdminUserStatus(user.token, selectedUser.id, userStatusDraft);
+				await loadUsers();
+			},
+			'Пользователь сохранён.',
+		);
+	}
+
 	async function handleBulkUsers(operation: 'activate' | 'deactivate' | 'delete') {
 		if (selectedUserIds.length === 0) return;
 		if (operation === 'delete' && !window.confirm('Удалить выбранных пользователей?')) return;
@@ -1177,6 +1199,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		handleDeleteCurrency,
 		handleSaveUserRole,
 		handleSaveUserStatus,
+		handleSaveUser,
 		handleBulkUsers,
 		handleDeleteSelectedUser,
 		handleOpenOrder,

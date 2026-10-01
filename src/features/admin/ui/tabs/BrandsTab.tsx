@@ -1,13 +1,28 @@
 'use client';
 
-import { Button } from '@/shared/ui/button/ui/Button';
-import {
-	inputClass,
-	textareaClass,
-	sectionClass,
-	SelectionToggle,
-} from '../shared';
+import { Plus } from 'lucide-react';
 import { useAdminPanel } from '../useAdminPanelState';
+import {
+	ActivePill,
+	Btn,
+	BulkBar,
+	Check,
+	DangerLink,
+	DangerZone,
+	EditorActions,
+	Empty,
+	Field,
+	Panel,
+	PanelHeader,
+	RowCheck,
+	SplitLayout,
+	areaClass,
+	fieldClass,
+	rowClass,
+	tableClass,
+	tdClass,
+	thClass,
+} from '../kit';
 
 export function BrandsTab() {
 	const {
@@ -27,149 +42,167 @@ export function BrandsTab() {
 		handleBulkBrands,
 	} = useAdminPanel();
 
+	const allChecked = availableBrands.length > 0 && availableBrands.every((brand) => selectedBrandIds.includes(brand.id));
+
 	return (
-		<div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
-			<div className={`${sectionClass} p-5`}>
-				<div className="flex flex-wrap items-center justify-between gap-3">
-					<div>
-						<h2 className="text-lg font-semibold text-slate-950">Бренды</h2>
-						<p className="mt-1 text-sm text-slate-500">Управление брендами и их активностью.</p>
-					</div>
-					{admin && (
-						<div className="flex flex-wrap gap-2">
-							<Button variant="secondary" onClick={() => void handleBulkBrands('activate')}>
-								Активировать
-							</Button>
-							<Button variant="secondary" onClick={() => void handleBulkBrands('deactivate')}>
-								Деактивировать
-							</Button>
-							<Button variant="secondary" onClick={() => void handleBulkBrands('delete-all')}>
-								Удалить все
-							</Button>
-						</div>
-					)}
-				</div>
-				<div className="mt-4 overflow-x-auto">
-					<table className="min-w-full text-sm">
-						<thead className="text-left text-slate-500">
+		<SplitLayout>
+			<Panel>
+				<PanelHeader
+					title="Бренды"
+					count={availableBrands.length}
+					actions={
+						editingBrandId ? (
+							<Btn onClick={resetBrandEditor}>
+								<Plus size={15} aria-hidden="true" />
+								Новый бренд
+							</Btn>
+						) : undefined
+					}
+				/>
+
+				{admin && (
+					<BulkBar count={selectedBrandIds.length} onClear={() => setSelectedBrandIds([])}>
+						<Btn onClick={() => void handleBulkBrands('activate')} loading={busyAction === 'bulk-brands-activate'}>
+							Показать
+						</Btn>
+						<Btn onClick={() => void handleBulkBrands('deactivate')} loading={busyAction === 'bulk-brands-deactivate'}>
+							Скрыть
+						</Btn>
+					</BulkBar>
+				)}
+
+				{availableBrands.length === 0 ? (
+					<Empty>Брендов пока нет.</Empty>
+				) : (
+					<div className="overflow-x-auto">
+<table className={tableClass}>
+						<colgroup>
+							{admin && <col className="w-[52px]" />}
+							<col />
+							<col className="w-[150px]" />
+							<col className="w-[110px]" />
+						</colgroup>
+						<thead>
 							<tr>
-								{admin && <th className="pb-3 pr-4 font-medium"></th>}
-								<th className="pb-3 pr-4 font-medium">Бренд</th>
-								<th className="pb-3 pr-4 font-medium">Страна</th>
-								<th className="pb-3 font-medium">Статус</th>
+								{admin && (
+									<th className={thClass}>
+										<RowCheck
+											label="Выбрать все"
+											checked={allChecked}
+											onChange={() => setSelectedBrandIds(allChecked ? [] : availableBrands.map((brand) => brand.id))}
+										/>
+									</th>
+								)}
+								<th className={thClass}>Бренд</th>
+								<th className={thClass}>Страна</th>
+								<th className={thClass}>Статус</th>
 							</tr>
 						</thead>
 						<tbody>
 							{availableBrands.map((brand) => (
-								<tr key={brand.id} className="border-t border-slate-200 text-slate-700">
+								<tr
+									key={brand.id}
+									className={rowClass(editingBrandId === brand.id)}
+									onClick={() => {
+										setEditingBrandId(brand.id);
+										setBrandForm({
+											name: brand.name,
+											description: brand.description ?? '',
+											logoUrl: brand.logoUrl ?? '',
+											countryOfOrigin: brand.countryOfOrigin ?? '',
+											isActive: brand.isActive,
+										});
+									}}
+								>
 									{admin && (
-										<td className="py-3 pr-4">
-											<SelectionToggle
+										<td className={tdClass}>
+											<RowCheck
+												label={`Выбрать ${brand.name}`}
 												checked={selectedBrandIds.includes(brand.id)}
-												onChange={() =>
-													toggleSelected(selectedBrandIds, brand.id, setSelectedBrandIds)
-												}
+												onChange={() => toggleSelected(selectedBrandIds, brand.id, setSelectedBrandIds)}
 											/>
 										</td>
 									)}
-									<td className="py-3 pr-4">
-										<button
-											type="button"
-											className="text-left font-medium text-slate-900"
-											onClick={() => {
-												setEditingBrandId(brand.id);
-												setBrandForm({
-													name: brand.name,
-													description: brand.description ?? '',
-													logoUrl: brand.logoUrl ?? '',
-													countryOfOrigin: brand.countryOfOrigin ?? '',
-													isActive: brand.isActive,
-												});
-											}}
-										>
-											{brand.name}
-										</button>
+									<td className={`${tdClass} truncate font-medium`}>{brand.name}</td>
+									<td className={`${tdClass} truncate text-[var(--muted)]`}>{brand.countryOfOrigin || '—'}</td>
+									<td className={tdClass}>
+										<ActivePill active={brand.isActive} />
 									</td>
-									<td className="py-3 pr-4">{brand.countryOfOrigin || '-'}</td>
-									<td className="py-3">{brand.isActive ? 'Активен' : 'Скрыт'}</td>
 								</tr>
 							))}
 						</tbody>
 					</table>
-				</div>
-			</div>
+</div>
+				)}
 
-			<div className={`${sectionClass} p-5`}>
-				<h2 className="text-lg font-semibold text-slate-950">
-					{editingBrandId ? 'Редактирование бренда' : 'Новый бренд'}
-				</h2>
-				<div className="mt-4 space-y-3">
-					<input
-						className={inputClass}
-						placeholder="Название"
-						value={brandForm.name}
-						onChange={(event) =>
-							setBrandForm((current) => ({ ...current, name: event.target.value }))
-						}
-					/>
-					<textarea
-						className={textareaClass}
-						placeholder="Описание"
-						value={brandForm.description ?? ''}
-						onChange={(event) =>
-							setBrandForm((current) => ({ ...current, description: event.target.value }))
-						}
-					/>
-					<input
-						className={inputClass}
-						placeholder="Логотип URL"
-						value={brandForm.logoUrl ?? ''}
-						onChange={(event) =>
-							setBrandForm((current) => ({ ...current, logoUrl: event.target.value }))
-						}
-					/>
-					<input
-						className={inputClass}
-						placeholder="Страна происхождения"
-						value={brandForm.countryOfOrigin ?? ''}
-						onChange={(event) =>
-							setBrandForm((current) => ({
-								...current,
-								countryOfOrigin: event.target.value,
-							}))
-						}
-					/>
-					<label className="flex items-center gap-2 text-sm text-slate-700">
+				{admin && (
+					<DangerZone>
+						<DangerLink onClick={() => void handleBulkBrands('delete-all')} loading={busyAction === 'bulk-brands-delete-all'}>
+							Удалить все бренды
+						</DangerLink>
+					</DangerZone>
+				)}
+			</Panel>
+
+			<Panel className="lg:sticky lg:top-4">
+				<PanelHeader title={editingBrandId ? 'Бренд' : 'Новый бренд'} />
+				<div className="space-y-4 px-5 py-4">
+					<Field label="Название">
 						<input
-							type="checkbox"
-							checked={brandForm.isActive}
-							onChange={(event) =>
-								setBrandForm((current) => ({ ...current, isActive: event.target.checked }))
-							}
+							className={fieldClass}
+							value={brandForm.name}
+							onChange={(event) => setBrandForm((current) => ({ ...current, name: event.target.value }))}
 						/>
-						<span>Бренд активен</span>
-					</label>
+					</Field>
+					<Field label="Страна происхождения">
+						<input
+							className={fieldClass}
+							value={brandForm.countryOfOrigin ?? ''}
+							onChange={(event) => setBrandForm((current) => ({ ...current, countryOfOrigin: event.target.value }))}
+						/>
+					</Field>
+					<Field label="Логотип" hint="Ссылка на картинку">
+						<input
+							className={fieldClass}
+							placeholder="https://…"
+							value={brandForm.logoUrl ?? ''}
+							onChange={(event) => setBrandForm((current) => ({ ...current, logoUrl: event.target.value }))}
+						/>
+					</Field>
+					<Field label="Описание">
+						<textarea
+							className={areaClass}
+							value={brandForm.description ?? ''}
+							onChange={(event) => setBrandForm((current) => ({ ...current, description: event.target.value }))}
+						/>
+					</Field>
+					<Check
+						label="Показывать на сайте"
+						checked={brandForm.isActive}
+						onChange={(checked) => setBrandForm((current) => ({ ...current, isActive: checked }))}
+					/>
 				</div>
-				<div className="mt-5 flex flex-wrap gap-2">
-					<Button onClick={() => void handleSaveBrand()} loading={busyAction === 'save-brand'}>
+				<EditorActions>
+					<Btn variant="primary" onClick={() => void handleSaveBrand()} loading={busyAction === 'save-brand'}>
 						{editingBrandId ? 'Сохранить' : 'Создать'}
-					</Button>
+					</Btn>
 					{editingBrandId && (
 						<>
-							<Button
-								variant="secondary"
+							<Btn variant="ghost" onClick={resetBrandEditor}>
+								Отмена
+							</Btn>
+							<Btn
+								variant="danger"
+								className="ml-auto"
 								onClick={() => void handleDeleteBrand(editingBrandId)}
 								loading={busyAction === 'delete-brand'}
 							>
 								Удалить
-							</Button>
-							<Button variant="ghost" onClick={resetBrandEditor}>
-								Сбросить
-							</Button>
+							</Btn>
 						</>
 					)}
-				</div>
-			</div>
-		</div>
+				</EditorActions>
+			</Panel>
+		</SplitLayout>
 	);
 }

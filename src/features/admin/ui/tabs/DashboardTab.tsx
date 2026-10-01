@@ -1,85 +1,69 @@
 'use client';
 
-import { FileSpreadsheet } from 'lucide-react';
-import { Button } from '@/shared/ui/button/ui/Button';
-import {
-	sectionClass,
-	formatDate,
-	MetricTile,
-} from '../shared';
+import { Download } from 'lucide-react';
+import { formatDate } from '../shared';
 import { useAdminPanel } from '../useAdminPanelState';
+import { Btn, Empty, Panel, PanelHeader } from '../kit';
+
+const numberFormat = new Intl.NumberFormat('ru-RU');
 
 export function DashboardTab() {
-	const {
-		busyAction,
-		dashboard,
-		handleDownloadReport,
-	} = useAdminPanel();
+	const { busyAction, dashboard, handleDownloadReport, setActiveTab } = useAdminPanel();
+
+	const metrics = [
+		{ label: 'Пользователи', value: dashboard?.usersCount ?? 0, tab: 'users' as const },
+		{ label: 'Заказы', value: dashboard?.ordersCount ?? 0, tab: 'orders' as const },
+		{ label: 'Товары', value: dashboard?.productsCount ?? 0, tab: 'products' as const },
+	];
 
 	return (
-		<>
-			<div className="grid gap-4 md:grid-cols-3">
-				<MetricTile label="Пользователи" value={dashboard?.usersCount ?? 0} />
-				<MetricTile label="Заказы" value={dashboard?.ordersCount ?? 0} />
-				<MetricTile label="Товары" value={dashboard?.productsCount ?? 0} />
+		<div className="space-y-5">
+			<div className="grid gap-4 sm:grid-cols-3">
+				{metrics.map((metric) => (
+					<button
+						key={metric.label}
+						type="button"
+						onClick={() => setActiveTab(metric.tab)}
+						className="rounded-md border border-[var(--line)] bg-white px-5 py-4 text-left transition hover:border-[#B9C3CF]"
+					>
+						<div className="text-[13px] text-[var(--muted)]">{metric.label}</div>
+						<div className="mt-1 font-mono text-[28px] font-semibold leading-tight text-[var(--ink)]">
+							{numberFormat.format(metric.value)}
+						</div>
+					</button>
+				))}
 			</div>
 
-			<div className={`${sectionClass} p-5`}>
-				<div className="flex flex-wrap items-center justify-between gap-3">
-					<div>
-						<h2 className="text-lg font-semibold text-slate-950">Отчеты</h2>
-						<p className="mt-1 text-sm text-slate-500">Выгрузки по пользователям и заказам.</p>
-					</div>
-					<div className="flex flex-wrap gap-2">
-						<Button
-							variant="secondary"
-							className="gap-2"
-							loading={busyAction === 'report-users'}
-							onClick={() => {
-								void handleDownloadReport('users');
-							}}
-						>
-							<FileSpreadsheet size={16} />
-							Пользователи
-						</Button>
-						<Button
-							variant="secondary"
-							className="gap-2"
-							loading={busyAction === 'report-orders'}
-							onClick={() => {
-								void handleDownloadReport('orders');
-							}}
-						>
-							<FileSpreadsheet size={16} />
-							Заказы
-						</Button>
-					</div>
-				</div>
-			</div>
-
-			<div className={`${sectionClass} p-5`}>
-				<h2 className="text-lg font-semibold text-slate-950">Последняя активность</h2>
-				<div className="mt-4 overflow-x-auto">
-					<table className="min-w-full text-sm">
-						<thead className="text-left text-slate-500">
-							<tr>
-								<th className="pb-3 pr-4 font-medium">Сообщение</th>
-								<th className="pb-3 pr-4 font-medium">Тип</th>
-								<th className="pb-3 font-medium">Дата</th>
-							</tr>
-						</thead>
-						<tbody>
-							{dashboard?.recentActivity.map((item) => (
-								<tr key={item.id} className="border-t border-slate-200 text-slate-700">
-									<td className="py-3 pr-4">{item.message}</td>
-									<td className="py-3 pr-4">{item.type}</td>
-									<td className="py-3">{formatDate(item.createdAt)}</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
-			</div>
-		</>
+			<Panel>
+				<PanelHeader
+					title="Последние события"
+					actions={
+						<>
+							<span className="text-[13px] text-[var(--muted)]">Выгрузка в Excel:</span>
+							<Btn onClick={() => void handleDownloadReport('users')} loading={busyAction === 'report-users'}>
+								<Download size={14} aria-hidden="true" />
+								Пользователи
+							</Btn>
+							<Btn onClick={() => void handleDownloadReport('orders')} loading={busyAction === 'report-orders'}>
+								<Download size={14} aria-hidden="true" />
+								Заказы
+							</Btn>
+						</>
+					}
+				/>
+				{(dashboard?.recentActivity.length ?? 0) === 0 ? (
+					<Empty>Событий пока нет.</Empty>
+				) : (
+					<ul className="m-0 list-none p-0">
+						{dashboard?.recentActivity.map((item) => (
+							<li key={item.id} className="flex items-baseline justify-between gap-4 border-t border-[var(--line)] px-5 py-3 text-sm first:border-t-0">
+								<span className="min-w-0 text-[var(--ink)]">{item.message}</span>
+								<span className="shrink-0 font-mono text-xs text-[var(--muted)]">{formatDate(item.createdAt)}</span>
+							</li>
+						))}
+					</ul>
+				)}
+			</Panel>
+		</div>
 	);
 }
