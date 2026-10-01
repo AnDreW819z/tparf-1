@@ -236,26 +236,45 @@ export function formatMoney(amount: number, currencyCode?: string | null) {
 	}).format(amount);
 }
 
+const STATUS_MESSAGES: Record<number, string> = {
+	401: 'Сессия истекла. Выйдите и войдите в аккаунт заново.',
+	403: 'Нет прав администратора. Если роль выдали недавно — выйдите и войдите заново, чтобы она применилась.',
+	404: 'Не найдено — возможно, запись уже удалили.',
+	409: 'Конфликт данных: запись уже изменена или существует.',
+	413: 'Файл или запрос слишком большой.',
+	429: 'Слишком много запросов. Подождите немного и повторите.',
+};
+
+/** Текст ошибки для плашки: сообщение сервера (они на русском), иначе — по коду ответа. Английский текст axios не показываем. */
 export function getErrorMessage(error: unknown) {
 	const fallback = 'Не удалось выполнить действие.';
 	if (!error || typeof error !== 'object') return fallback;
 
-	const maybeError = error as {
+	const { response } = error as {
 		response?: {
+			status?: number;
 			data?: unknown;
 		};
-		message?: string;
 	};
 
-	const data = maybeError.response?.data;
-	if (typeof data === 'string') return data;
-
-	if (data && typeof data === 'object') {
-		const typed = data as { message?: string; error?: string; title?: string };
-		return typed.message || typed.error || typed.title || maybeError.message || fallback;
+	if (!response) {
+		return 'Сервер не отвечает. Проверьте подключение к интернету и повторите.';
 	}
 
-	return maybeError.message || fallback;
+	const data = response.data;
+	if (typeof data === 'string' && data.trim()) return data;
+
+	if (data && typeof data === 'object') {
+		const typed = data as { message?: string; error?: string; title?: string; errors?: Record<string, string[] | string> };
+		const fieldErrors = Object.values(typed.errors ?? {}).flat().filter((m) => typeof m === 'string' && m.trim());
+		const text = typed.message || typed.error || (fieldErrors.length ? [...new Set(fieldErrors)].join('\n') : '') || typed.title;
+		if (text) return text;
+	}
+
+	const status = response.status ?? 0;
+	if (STATUS_MESSAGES[status]) return STATUS_MESSAGES[status];
+	if (status >= 500) return 'На сервере произошла ошибка. Повторите чуть позже.';
+	return fallback;
 }
 
 export function downloadBlob(blob: Blob, fileName: string) {

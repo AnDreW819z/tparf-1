@@ -65,7 +65,7 @@ export function AdminPageClient({ user }: { user: AuthenticatedUser }) {
 				{notice && (
 					<div
 						className={[
-							'mb-6 border px-4 py-3 text-sm',
+							'mb-6 whitespace-pre-line border px-4 py-3 text-sm',
 							notice.type === 'success'
 								? 'border-emerald-200 bg-emerald-50 text-emerald-700'
 								: 'border-rose-200 bg-rose-50 text-rose-700',
