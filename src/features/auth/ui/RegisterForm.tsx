@@ -35,10 +35,10 @@ export function RegisterForm() {
                             id="inn"
                             name="inn"
                             type="tel"
-                            pattern="[0-9]{10}"
-                            maxLength={10}
                             inputMode="numeric"
-                            placeholder="1234567890"
+                            maxLength={16}
+                            placeholder="10 цифр, для ИП — 12"
+                            title="10 цифр для организации или 12 для ИП"
                             required
                             className={inputClass}
                         />
