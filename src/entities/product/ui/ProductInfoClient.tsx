@@ -22,6 +22,10 @@ interface ProductInfoClientProps {
     brandName?: string | null;
     cartInfo: CartInfo;
     user: UserWithToken | null;
+    /** false — поставщик отметил «нет в наличии». */
+    isAvailable?: boolean;
+    /** false — снят с продажи (пропал из фида поставщика). */
+    isActive?: boolean;
 }
 
 function getErrorMessage(error: unknown) {
@@ -41,6 +45,8 @@ export function ProductInfoClient({
     brandName,
     cartInfo: initialCartInfo,
     user,
+    isAvailable = true,
+    isActive = true,
 }: ProductInfoClientProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
@@ -190,6 +196,16 @@ export function ProductInfoClient({
                         </span>
                         {!isPriceOnRequest && <span className="text-sm text-[var(--muted)]">за шт., с НДС 22%</span>}
                     </div>
+
+                    {!isActive ? (
+                        <p className="m-0 text-sm font-medium text-[#B42318]">Товар снят с продажи</p>
+                    ) : (
+                        !isAvailable && (
+                            <p className="m-0 text-sm text-[var(--muted)]">
+                                Нет в наличии у поставщика — можно оформить под заказ, менеджер уточнит сроки.
+                            </p>
+                        )
+                    )}
 
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
                         <div

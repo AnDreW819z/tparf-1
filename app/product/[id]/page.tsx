@@ -74,6 +74,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                         currencyCode={product.currencyCode}
                         brandName={product.brandName}
                         cartInfo={finalCartInfo}
+                        isAvailable={product.isAvailable}
+                        isActive={product.isActive}
                         user={user}
                     />
                 </div>

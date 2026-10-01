@@ -14,6 +14,8 @@ export type ProductCardProps = {
     brandName?: string;
     className?: string;
     hrefName?: string;
+    /** false — поставщик отметил «нет в наличии»: карточка приглушена и с пометкой. */
+    isAvailable?: boolean;
 };
 
 export function ProductCard({
@@ -25,6 +27,7 @@ export function ProductCard({
                                 brandName,
                                 className,
                                 hrefName,
+                                isAvailable = true,
                             }: ProductCardProps) {
     const to = hrefName ?? `/product/${id}`;
 
@@ -35,9 +38,14 @@ export function ProductCard({
                     src={imageUrl}
                     alt={name}
                     fill
-                    className="object-contain p-3"
+                    className={clsx('object-contain p-3', !isAvailable && 'opacity-60')}
                     sizes="(min-width:1280px) 25vw, (min-width:1024px) 33vw, 50vw"
                 />
+                {!isAvailable && (
+                    <span className="absolute left-2 top-2 rounded-[3px] bg-white/95 px-2 py-0.5 text-xs font-medium text-[var(--muted)] shadow-sm">
+                        Нет в наличии
+                    </span>
+                )}
             </Link>
 
             <h3 className="m-0 line-clamp-2 text-[15px] font-medium leading-snug text-[var(--ink)]">

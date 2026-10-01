@@ -66,6 +66,7 @@ export default async function CategoryByIdPage({ params, searchParams }: Catalog
             currencyCode: p.currencyCode,
             imageUrl: p.images?.find((i) => i.isMain)?.imageUrl ?? p.images?.[0]?.imageUrl,
             brandName: p.brandName,
+            isAvailable: p.isAvailable,
         })) ?? [];
 
     const totalCount = productsData?.totalCount ?? 0;

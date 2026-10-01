@@ -53,6 +53,8 @@ export type ProductItem = {
     characteristics: Record<string, unknown>;
     stockQuantity: number;
     isActive: boolean;
+    /** В наличии по фиду поставщика; false — «Нет в наличии». */
+    isAvailable?: boolean;
     createdAt: string;
 };
 

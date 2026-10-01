@@ -59,6 +59,8 @@ export type ProductDetail = {
     characteristicItems?: ProductCharacteristic[];
     stockQuantity: number;
     isActive: boolean;
+    /** В наличии по фиду поставщика; false — «Нет в наличии». */
+    isAvailable?: boolean;
     cartInfo: CartInfo;
     createdAt: string;
 };
