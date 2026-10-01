@@ -1,0 +1,110 @@
+/*
+ * Подвал TPARF — зеркальная (по вертикали) копия шапки:
+ *  - .side — боковые полосы (#00275B) от краёв экрана; сверху поднимаются на 22px выше
+ *    панели (до низа белого листа), снизу заканчиваются на 22px выше неё;
+ *  - .panel — центральная площадка (#002E6D), на 30px шире белого листа;
+ *  - .fold — тёмные треугольники (#001C42) над верхними углами панели, прямой угол —
+ *    на верхней кромке панели у внутреннего края боковой полосы.
+ * Подвал заходит под лист на 22px (margin-top: -22px), лист лежит выше (z-index 3).
+ * Центровка по 50vw — как у шапки и листа.
+ */
+
+.footer {
+    position: relative;
+    z-index: 1;
+    width: 100vw;
+    margin-top: -22px;
+    padding: 22px 0 7px;
+    box-sizing: border-box;
+    font-family: var(--font-body);
+}
+
+.side {
+    position: absolute;
+    top: 0;
+    bottom: 29px;
+    width: calc(50vw - min(568px, 50vw - 20px) + 15px);
+    background: var(--navy-deep);
+    z-index: 1;
+}
+
+.sideLeft { left: 0; }
+.sideRight { right: 0; }
+
+.panel {
+    position: relative;
+    z-index: 2;
+    width: 1136px;
+    max-width: calc(100vw - 40px);
+    margin-left: calc(50vw - min(568px, 50vw - 20px));
+    background: var(--primary-blue);
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.fold {
+    position: absolute;
+    bottom: 100%;
+    width: 15px;
+    height: 22px;
+    background: var(--navy-fold);
+}
+
+.foldLeft {
+    left: 0;
+    clip-path: polygon(0 100%, 100% 100%, 100% 0);
+}
+
+.foldRight {
+    right: 0;
+    clip-path: polygon(100% 100%, 0 100%, 0 0);
+}
+
+.grid {
+    display: grid;
+    gap: 32px;
+    padding: 44px 43px 32px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.title {
+    margin-bottom: 4px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.link {
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.link:hover { color: #ffffff; }
+
+.phone {
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.phone:hover { color: #ffffff; }
+
+.about { max-width: 300px; margin: 0; }
+
+.bottom {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 24px;
+    padding: 16px 43px;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+@media (max-width: 900px) {
+    .grid { padding: 36px 16px 24px; gap: 24px; }
+    .bottom { padding: 14px 16px; }
+}
