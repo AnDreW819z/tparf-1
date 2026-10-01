@@ -3,27 +3,36 @@
 import Link from 'next/link';
 import { useActionState, useState } from 'react';
 import { registerAction, type RegisterState } from '../actions';
+import { useLiveValidation } from '../lib/useLiveValidation';
+import { registerSchema } from '../validation';
+import { FieldError, inputClassFor } from './FieldError';
 
 const initialState: RegisterState = { ok: false };
-
-const inputClass =
-    'h-11 w-full rounded border border-[#C9D0D8] bg-white px-3 text-[15px] text-[var(--ink)] outline-none transition focus:border-[var(--primary-blue)] focus:ring-1 focus:ring-[var(--primary-blue)]';
 
 const labelClass = 'mb-1.5 block text-[13px] text-[#444]';
 
 export function RegisterForm() {
     const [state, formAction] = useActionState(registerAction, initialState);
     const [consentChecked, setConsentChecked] = useState(false);
+    const { formProps, errorFor } = useLiveValidation(registerSchema, state.errors);
 
     return (
         <>
-            <form action={formAction} className="space-y-5">
+            <form action={formAction} {...formProps} className="space-y-5">
                 <div>
                     <label htmlFor="companyName" className={labelClass}>
                         Название компании *
                     </label>
-                    <input id="companyName" name="companyName" required className={inputClass} />
-                    {state.errors?.companyName && <p className="mt-2 text-sm text-rose-600">{state.errors.companyName}</p>}
+                    <input
+                        id="companyName"
+                        name="companyName"
+                        required
+                        autoComplete="organization"
+                        aria-invalid={!!errorFor('companyName')}
+                        aria-describedby="companyName-error"
+                        className={inputClassFor(errorFor('companyName'))}
+                    />
+                    <FieldError id="companyName-error" message={errorFor('companyName')} />
                 </div>
 
                 <div className="grid gap-5 sm:grid-cols-2">
@@ -38,19 +47,29 @@ export function RegisterForm() {
                             inputMode="numeric"
                             maxLength={16}
                             placeholder="10 цифр, для ИП — 12"
-                            title="10 цифр для организации или 12 для ИП"
                             required
-                            className={inputClass}
+                            aria-invalid={!!errorFor('inn')}
+                            aria-describedby="inn-error"
+                            className={inputClassFor(errorFor('inn'))}
                         />
-                        {state.errors?.inn && <p className="mt-2 text-sm text-rose-600">{state.errors.inn}</p>}
+                        <FieldError id="inn-error" message={errorFor('inn')} />
                     </div>
 
                     <div>
                         <label htmlFor="email" className={labelClass}>
                             Email *
                         </label>
-                        <input type="email" id="email" name="email" required className={inputClass} />
-                        {state.errors?.email && <p className="mt-2 text-sm text-rose-600">{state.errors.email}</p>}
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            required
+                            autoComplete="email"
+                            aria-invalid={!!errorFor('email')}
+                            aria-describedby="email-error"
+                            className={inputClassFor(errorFor('email'))}
+                        />
+                        <FieldError id="email-error" message={errorFor('email')} />
                     </div>
                 </div>
 
@@ -64,25 +83,33 @@ export function RegisterForm() {
                             id="password"
                             name="password"
                             required
-                            minLength={8}
-                            aria-describedby="password-hint"
-                            className={inputClass}
+                            autoComplete="new-password"
+                            aria-invalid={!!errorFor('password')}
+                            aria-describedby="password-error"
+                            className={inputClassFor(errorFor('password'))}
                         />
-                        {state.errors?.password ? (
-                            <p className="mt-2 text-sm text-rose-600">{state.errors.password}</p>
-                        ) : (
-                            <p id="password-hint" className="mt-2 text-sm text-[#888]">
-                                Не короче 8 символов, хотя бы одна цифра
-                            </p>
-                        )}
+                        <FieldError
+                            id="password-error"
+                            message={errorFor('password')}
+                            hint="Не короче 8 символов, хотя бы одна цифра"
+                        />
                     </div>
 
                     <div>
                         <label htmlFor="confirm" className={labelClass}>
                             Повторите пароль *
                         </label>
-                        <input type="password" id="confirm" name="confirm" required className={inputClass} />
-                        {state.errors?.confirm && <p className="mt-2 text-sm text-rose-600">{state.errors.confirm}</p>}
+                        <input
+                            type="password"
+                            id="confirm"
+                            name="confirm"
+                            required
+                            autoComplete="new-password"
+                            aria-invalid={!!errorFor('confirm')}
+                            aria-describedby="confirm-error"
+                            className={inputClassFor(errorFor('confirm'))}
+                        />
+                        <FieldError id="confirm-error" message={errorFor('confirm')} />
                     </div>
                 </div>
 
@@ -98,9 +125,13 @@ export function RegisterForm() {
                     />
                     <span className="text-[13.5px] leading-relaxed text-[#444]">Даю согласие на обработку данных компании</span>
                 </label>
-                {state.errors?.consent && <p className="text-sm text-rose-600">{state.errors.consent}</p>}
+                <FieldError id="consent-error" message={errorFor('consent')} />
 
-                {state.message && <p className="text-sm text-rose-600">{state.message}</p>}
+                {state.message && (
+                    <p role="alert" className="whitespace-pre-line rounded border border-rose-200 bg-rose-50 px-3.5 py-3 text-sm text-rose-700">
+                        {state.message}
+                    </p>
+                )}
 
                 <button
                     type="submit"

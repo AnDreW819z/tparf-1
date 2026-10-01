@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { loginAction, type LoginState } from '@/features/auth/actions';
+import { useLiveValidation } from '../lib/useLiveValidation';
+import { loginSchema } from '../validation';
+import { FieldError, inputClassFor } from './FieldError';
 
 const initialState: LoginState = { ok: false };
-
-const inputClass =
-    'h-11 w-full rounded border border-[#C9D0D8] bg-white px-3 text-[15px] text-[var(--ink)] outline-none transition focus:border-[var(--primary-blue)] focus:ring-1 focus:ring-[var(--primary-blue)]';
 
 function SubmitBtn() {
     const { pending } = useFormStatus();
@@ -26,29 +26,46 @@ function SubmitBtn() {
 
 export function LoginForm() {
     const [state, formAction] = useActionState(loginAction, initialState);
+    const { formProps, errorFor } = useLiveValidation(loginSchema, state.errors);
 
     return (
         <>
-            <form action={formAction} className="space-y-5">
+            <form action={formAction} {...formProps} className="space-y-5">
                 <div>
-                    <label className="mb-1.5 block text-sm font-medium text-[var(--ink)]">Email</label>
-                    <input type="email" name="email" className={inputClass} required autoComplete="email" />
-                    {state.errors?.email && <p className="mt-2 text-sm text-rose-600">{state.errors.email}</p>}
+                    <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-[var(--ink)]">Email</label>
+                    <input
+                        id="login-email"
+                        type="email"
+                        name="email"
+                        required
+                        autoComplete="email"
+                        aria-invalid={!!errorFor('email')}
+                        aria-describedby="login-email-error"
+                        className={inputClassFor(errorFor('email'))}
+                    />
+                    <FieldError id="login-email-error" message={errorFor('email')} />
                 </div>
 
                 <div>
-                    <label className="mb-1.5 block text-sm font-medium text-[var(--ink)]">Пароль</label>
+                    <label htmlFor="login-password" className="mb-1.5 block text-sm font-medium text-[var(--ink)]">Пароль</label>
                     <input
+                        id="login-password"
                         type="password"
                         name="password"
-                        className={inputClass}
                         required
                         autoComplete="current-password"
+                        aria-invalid={!!errorFor('password')}
+                        aria-describedby="login-password-error"
+                        className={inputClassFor(errorFor('password'))}
                     />
-                    {state.errors?.password && <p className="mt-2 text-sm text-rose-600">{state.errors.password}</p>}
+                    <FieldError id="login-password-error" message={errorFor('password')} />
                 </div>
 
-                {state.message && <p className="text-sm text-rose-600">{state.message}</p>}
+                {state.message && (
+                    <p role="alert" className="whitespace-pre-line rounded border border-rose-200 bg-rose-50 px-3.5 py-3 text-sm text-rose-700">
+                        {state.message}
+                    </p>
+                )}
 
                 <SubmitBtn />
             </form>

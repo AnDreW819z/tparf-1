@@ -50,13 +50,21 @@ async function shouldUseSecureCookie() {
 }
 
 function extractApiMessage(error: unknown, fallback: string) {
-	const responseData = (
+	const response = (
 		error as {
 			response?: {
+				status?: number;
 				data?: ApiErrorPayload;
 			};
 		}
-	).response?.data;
+	).response;
+
+	// Ответа нет вовсе — сервер недоступен, дело не в введённых данных.
+	if (!response) {
+		return 'Сервер не отвечает. Проверьте подключение к интернету и попробуйте ещё раз через минуту.';
+	}
+
+	const responseData = response.data;
 
 	if (typeof responseData === 'string' && responseData.trim()) {
 		return responseData;
@@ -68,7 +76,8 @@ function extractApiMessage(error: unknown, fallback: string) {
 			.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
 
 		if (descriptions.length > 0) {
-			return descriptions.join('\n');
+			// Identity на занятый email присылает две одинаковые ошибки (DuplicateUserName и DuplicateEmail).
+			return [...new Set(descriptions)].join('\n');
 		}
 	}
 
@@ -78,7 +87,7 @@ function extractApiMessage(error: unknown, fallback: string) {
 			.filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
 
 		if (messages.length > 0) {
-			return messages.join('\n');
+			return [...new Set(messages)].join('\n');
 		}
 	}
 
@@ -89,6 +98,10 @@ function extractApiMessage(error: unknown, fallback: string) {
 		}
 	}
 
+	if (response.status && response.status >= 500) {
+		return 'На сервере произошла ошибка. Попробуйте ещё раз чуть позже.';
+	}
+
 	return fallback;
 }
 
@@ -96,23 +109,14 @@ export async function registerAction(_: RegisterState, formData: FormData): Prom
 	let registeredEmail = '';
 
 	try {
-		const parsed = registerSchema
-			.pick({
-				email: true,
-				password: true,
-				companyName: true,
-				inn: true,
-				confirm: true,
-				consent: true,
-			})
-			.parse({
-				email: formData.get('email'),
-				password: formData.get('password'),
-				companyName: formData.get('companyName'),
-				inn: formData.get('inn'),
-				confirm: formData.get('confirm'),
-				consent: formData.get('consent') === 'on',
-			});
+		const parsed = registerSchema.parse({
+			email: formData.get('email'),
+			password: formData.get('password'),
+			companyName: formData.get('companyName'),
+			inn: formData.get('inn'),
+			confirm: formData.get('confirm'),
+			consent: formData.get('consent') === 'on',
+		});
 
 		const response = await register({
 			email: parsed.email,
