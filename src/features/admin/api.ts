@@ -134,7 +134,7 @@ export type AdminUser = {
 	userName: string;
 	email: string;
 	companyName: string | null;
-	inn: number | null;
+	inn: string | null;
 	isActive: boolean;
 	roles: string[];
 	brands: Brand[];

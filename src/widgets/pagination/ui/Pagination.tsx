@@ -84,10 +84,8 @@ export function Pagination({ basePath, page, pageSize, totalCount, preserve }: P
                         <Link
                             key="prev"
                             href={makeHref(basePath, target, pageSize, preserve)}
-                            className={clsx(
-                                'min-w-10 h-10 px-3 rounded border inline-flex items-center justify-center text-sm',
-                                'bg-white text-gray-700 hover:bg-gray-50 border-[#DDDDDD]'
-                            )}
+                            className="inline-flex h-[34px] min-w-[34px] items-center justify-center rounded-full border border-[#d8d8d8] bg-white px-2 text-[13px] font-bold text-[#555]"
+                            style={{ fontFamily: 'var(--font-display)' }}
                             aria-label="Предыдущая страница"
                         >
                             {'<'}
@@ -101,10 +99,8 @@ export function Pagination({ basePath, page, pageSize, totalCount, preserve }: P
                         <Link
                             key="next"
                             href={makeHref(basePath, target, pageSize, preserve)}
-                            className={clsx(
-                                'min-w-10 h-10 px-3 rounded border inline-flex items-center justify-center text-sm',
-                                'bg-white text-gray-700 hover:bg-gray-50 border-[#DDDDDD]'
-                            )}
+                            className="inline-flex h-[34px] min-w-[34px] items-center justify-center rounded-full border border-[#d8d8d8] bg-white px-2 text-[13px] font-bold text-[#555]"
+                            style={{ fontFamily: 'var(--font-display)' }}
                             aria-label="Следующая страница"
                         >
                             {'>'}
@@ -120,11 +116,12 @@ export function Pagination({ basePath, page, pageSize, totalCount, preserve }: P
                         key={p}
                         href={makeHref(basePath, p, pageSize, preserve)}
                         className={clsx(
-                            'min-w-10 h-10 px-3 rounded border inline-flex items-center justify-center text-sm',
+                            'inline-flex h-[34px] min-w-[34px] items-center justify-center rounded-full border px-2 text-[13px] font-bold',
                             active
-                                ? 'bg-[#6367B8] text-white border-[#6367B8]'
-                                : 'bg-white text-gray-700 hover:bg-gray-50 border-[#DDDDDD]'
+                                ? 'border-[var(--primary-blue)] bg-[var(--primary-blue)] text-white'
+                                : 'border-[#d8d8d8] bg-white text-[#555]'
                         )}
+                        style={{ fontFamily: 'var(--font-display)' }}
                         aria-current={active ? 'page' : undefined}
                     >
                         {p}

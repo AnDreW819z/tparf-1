@@ -28,19 +28,20 @@ export default async function ConfirmEmailByCodePage({ params }: ConfirmEmailByC
         success = false;
     }
 
-    const badgeClass = success
-        ? 'border-emerald-200 bg-emerald-100 text-emerald-700'
-        : 'border-rose-200 bg-rose-100 text-rose-700';
+    const badgeStyle = { background: success ? '#0f9d6a' : '#e0466f' };
 
     return (
-        <section className="bg-slate-50">
-            <div className="mx-auto flex min-h-[calc(100vh-10rem)] max-w-7xl items-center justify-center px-4 py-10 sm:py-14">
-                <div className="w-full max-w-2xl rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-                    <div className={`inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${badgeClass}`}>
+        <section style={{ background: '#F0EFEF' }}>
+            <div className="flex min-h-[60vh] items-center justify-center px-4 py-10 sm:py-14">
+                <div className="w-full max-w-2xl rounded-md border border-[#e2e2e2] bg-white p-8 shadow-[0_8px_28px_rgba(0,46,109,0.1)] sm:p-10">
+                    <div
+                        className="inline-flex rounded-full px-3.5 py-1.5 text-xs font-bold uppercase tracking-wide text-white"
+                        style={{ ...badgeStyle, fontFamily: 'var(--font-display)' }}
+                    >
                         {success ? 'Подтверждено' : 'Ошибка'}
                     </div>
-                    <h1 className="mt-5 text-3xl font-semibold text-slate-950">{title}</h1>
-                    <p className="mt-3 text-sm leading-7 text-slate-600 sm:text-base">{description}</p>
+                    <h1 className="mt-5 heading-1 text-2xl">{title}</h1>
+                    <p className="mt-3 text-sm leading-6 text-[#444]">{description}</p>
                     <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                         <Link
                             href="/auth/login"
@@ -50,7 +51,7 @@ export default async function ConfirmEmailByCodePage({ params }: ConfirmEmailByC
                         </Link>
                         <Link
                             href="/"
-                            className="button-brand-secondary flex h-12 items-center justify-center px-5 text-sm font-semibold"
+                            className="button-brand-outline flex h-12 items-center justify-center px-5 text-sm font-semibold"
                         >
                             На главную
                         </Link>

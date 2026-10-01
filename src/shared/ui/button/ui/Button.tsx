@@ -20,16 +20,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 ref={ref}
                 disabled={disabled || loading}
                 className={clsx(
-                    'inline-flex items-center justify-center rounded-md transition',
+                    'inline-flex items-center justify-center rounded transition',
                     fullWidth && 'w-full',
                     {
-                        primary: 'button-primary',
-                        secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
-                        ghost: 'bg-transparent hover:bg-gray-50',
-                        link: 'bg-transparent text-blue-600 hover:underline',
+                        primary: 'button-brand-primary',
+                        secondary: 'button-brand-secondary',
+                        ghost: 'button-brand-outline',
+                        link: 'bg-transparent text-[var(--blue-accent)] hover:text-[var(--primary-blue)] hover:underline',
                     }[variant],
                     {
-                        sm: 'h-8 px-3 text-sm',
+                        sm: 'h-8 px-3 text-xs',
                         md: 'h-10 px-4 text-sm',
                         lg: 'h-12 px-6 text-base',
                     }[size],

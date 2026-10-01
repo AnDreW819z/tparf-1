@@ -67,11 +67,11 @@ export function AddToCartModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-            <div className="relative mx-4 max-h-[90vh] w-full max-w-md overflow-hidden rounded-[1.5rem] bg-white shadow-2xl">
+            <div className="relative mx-4 max-h-[90vh] w-full max-w-md overflow-hidden rounded-md bg-white shadow-2xl">
                 <div className="border-b border-slate-200 bg-slate-50 p-6 pb-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h3 className="text-xl font-semibold text-slate-950">{title}</h3>
+                            <h3 className="heading-1 text-xl">{title}</h3>
                             <p className="mt-1 text-sm text-slate-600">{description}</p>
                         </div>
                         <button
@@ -119,7 +119,7 @@ export function AddToCartModal({
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="button-brand-secondary flex min-h-12 flex-1 px-6 py-3 text-sm font-semibold disabled:opacity-50"
+                                className="button-brand-outline flex min-h-12 flex-1 px-6 py-3 text-sm font-semibold disabled:opacity-50"
                                 disabled={loading}
                             >
                                 Отмена

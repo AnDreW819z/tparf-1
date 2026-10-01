@@ -1,218 +1,203 @@
+/*
+ * Шапка TPARF: три прямоугольника + два треугольника.
+ *  - .sideLeft / .sideRight — боковые полосы (#00275B) от краёв экрана, опущены на 22px
+ *    относительно панели и заходят под неё на ширину скоса (15px);
+ *  - .panel — центральная площадка (#002E6D), на 30px шире белого листа контента;
+ *  - .fold — тёмные треугольники (#001C42) под нижними углами панели:
+ *    прямой угол на нижней кромке панели у внутреннего края боковой полосы.
+ * Все размеры центрируются по 50vw — так же, как лист в layout (.pageSheet).
+ */
+
 .header {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background-color: #142037;
-    color: #ffffff;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 10px 28px rgba(20, 32, 55, 0.16);
+    position: relative;
+    width: 100vw;
+    height: 101px;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    font-family: var(--font-body);
 }
 
-.mainbar {
-    min-height: 64px;
+.side {
+    position: absolute;
+    top: 29px;
+    height: 72px;
+    width: calc(50vw - min(568px, 50vw - 20px) + 15px);
+    background: var(--navy-deep);
+    z-index: 1;
 }
 
-.mainbarInner {
-    max-width: 80rem;
-    margin: 0 auto;
-    padding: 0.5rem 1rem;
-    display: grid;
-    grid-template-columns: auto 1fr auto;
+.sideLeft { left: 0; }
+.sideRight { right: 0; }
+
+.panel {
+    position: absolute;
+    top: 7px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1136px;
+    max-width: calc(100vw - 40px);
+    height: 72px;
+    background: var(--primary-blue);
+    z-index: 2;
+}
+
+.fold {
+    position: absolute;
+    top: 100%;
+    width: 15px;
+    height: 22px;
+    background: var(--navy-fold);
+}
+
+.foldLeft {
+    left: 0;
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+
+.foldRight {
+    right: 0;
+    clip-path: polygon(100% 0, 0 0, 0 100%);
+}
+
+.content {
+    height: 100%;
+    box-sizing: border-box;
+    padding: 0 43px;
+    display: flex;
     align-items: center;
-    gap: 0.75rem;
-    min-height: 64px;
+    gap: 16px;
+    color: #ffffff;
 }
 
 .brand {
-    display: inline-flex;
-    align-items: center;
-    justify-self: center;
-    color: #ffffff;
-    text-decoration: none;
-}
-
-.logo {
-    width: 72px;
-    height: 72px;
-    object-fit: contain;
-}
-
-.desktopNav,
-.desktopSearch,
-.desktopActions {
-    display: none;
-}
-
-.desktopNav {
-    align-items: center;
-    gap: 0.35rem;
-}
-
-.desktopNavLink {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 38px;
-    padding: 0 0.95rem;
-    border-radius: 999px;
-    color: rgba(241, 245, 249, 0.92);
-    text-decoration: none;
-    transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.desktopNavLink:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #ffffff;
-}
-
-.desktopSearch {
-    min-width: 320px;
-}
-
-.desktopActions {
-    justify-content: flex-end;
-}
-
-.mobileActions {
+    flex: none;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
 }
 
-.mobileSearchRow {
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.mobileSearchInner {
-    max-width: 80rem;
-    margin: 0 auto;
-    padding: 0.5rem 1rem 0.75rem;
-}
-
-.iconButton {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 38px;
-    height: 38px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.04);
-    color: #ffffff;
-    text-decoration: none;
-    cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.iconButton:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.18);
-}
-
-.mobileOverlay {
-    position: fixed;
-    inset: 0;
-    z-index: 70;
-    display: flex;
-    justify-content: flex-start;
-}
-
-.backdrop {
-    position: absolute;
-    inset: 0;
-    border: 0;
-    background: rgba(15, 23, 42, 0.54);
-    cursor: pointer;
-}
-
-.drawer {
-    position: relative;
-    width: min(86vw, 360px);
-    height: 100%;
-    padding: 1rem;
-    background: #142037;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 16px 0 42px rgba(15, 23, 42, 0.35);
-}
-
-.drawerHeader {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-}
-
-.drawerTitle {
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #ffffff;
-}
-
-.drawerSubtitle {
-    margin-top: 0.25rem;
-    font-size: 0.8rem;
-    line-height: 1.4;
-    color: rgba(226, 232, 240, 0.72);
-}
-
-.drawerNav {
-    margin-top: 1.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.55rem;
-}
-
-.drawerLink {
+.brand img {
     display: block;
-    padding: 0.9rem 1rem;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.04);
-    color: #ffffff;
-    text-decoration: none;
-    font-size: 0.95rem;
-    font-weight: 600;
-    transition: background-color 0.2s ease;
+    height: 50px;
+    width: auto;
 }
 
-.drawerLink:hover {
+.outlineBtn {
+    flex: none;
+    height: 34px;
+    box-sizing: border-box;
+    padding: 0 15px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 3px;
+    background: transparent;
+    color: #ffffff;
+    font: inherit;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.outlineBtn:hover {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.7);
     background: rgba(255, 255, 255, 0.08);
 }
 
-@media (min-width: 768px) {
-    .mainbar {
-        min-height: 72px;
-    }
+.search {
+    flex: 1 1 auto;
+    min-width: 180px;
+    max-width: 360px;
+    height: 34px;
+    display: flex;
+    background: #ffffff;
+    border-radius: 4px;
+    overflow: hidden;
+}
 
-    .mainbarInner {
-        grid-template-columns: auto auto minmax(320px, 1fr) auto;
-        gap: 1rem;
-        min-height: 72px;
-    }
+.search input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 0;
+    outline: none;
+    padding: 0 12px;
+    font: inherit;
+    font-size: 12px;
+    color: var(--ink);
+    background: transparent;
+}
 
-    .brand {
-        justify-self: start;
-    }
+.search input::placeholder { color: #6b7787; }
 
-    .logo {
-        width: 96px;
-        height: 96px;
-    }
+.search button {
+    flex: none;
+    width: 40px;
+    border: 0;
+    background: #ffffff;
+    color: var(--primary-blue);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-    .iconButton:first-child {
-        display: none;
-    }
+.nav {
+    flex: none;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
-    .desktopNav,
-    .desktopActions {
-        display: flex;
-    }
+.navLink {
+    position: relative;
+    height: 34px;
+    padding: 0 8px;
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #ffffff;
+    font-size: 12px;
+    white-space: nowrap;
+}
 
-    .desktopSearch {
-        display: block;
-    }
+.navLink:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+}
 
-    .mobileActions,
-    .mobileSearchRow {
-        display: none;
-    }
+.badge {
+    position: absolute;
+    top: -3px;
+    right: 0;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    box-sizing: border-box;
+    border-radius: 7px;
+    background: #f4a900;
+    color: #222222;
+    font-size: 9px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cartLink { padding-right: 12px; }
+
+.searchIconOnly { display: none; }
+
+/* Узкие экраны: прячем подписи, поле поиска превращается в иконку */
+@media (max-width: 900px) {
+    .content { padding: 0 16px; gap: 8px; }
+    .brand img { height: 40px; }
+    .search { display: none; }
+    .searchIconOnly { display: inline-flex; }
+    .label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .outlineBtn { padding: 0 10px; }
 }

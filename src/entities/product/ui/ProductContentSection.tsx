@@ -208,9 +208,9 @@ function SectionCard({
 }) {
     return (
         <section
-            className={`w-full max-w-full rounded-3xl border border-slate-200 bg-white p-5 text-slate-700 shadow-sm sm:p-6 lg:p-8 ${className}`}
+            className={`w-full max-w-full rounded-md border border-[#e2e2e2] bg-white p-8 ${className}`}
         >
-            <h2 className="text-2xl font-bold text-slate-950">{title}</h2>
+            <h2 className="heading-1 text-xl">{title}</h2>
             <div className="mt-6 min-w-0">{children}</div>
         </section>
     );
@@ -219,14 +219,14 @@ function SectionCard({
 function TechnicalPairs({ pairs, fallback }: { pairs: KeyValuePair[]; fallback: string[] }) {
     return (
         <div className="space-y-5">
-            <dl className="divide-y divide-slate-100">
+            <dl className="divide-y divide-[var(--gray-bg)]">
                 {pairs.map((pair, index) => (
                     <div
                         key={`${pair.name}-${pair.value}-${index}`}
                         className="grid grid-cols-1 gap-1 py-4 xl:grid-cols-[180px_1fr] xl:gap-4"
                     >
-                        <dt className="min-w-0 break-words text-sm text-slate-500">{pair.name}</dt>
-                        <dd className="min-w-0 break-words text-sm leading-7 text-slate-700 [overflow-wrap:anywhere]">
+                        <dt className="min-w-0 break-words text-sm text-[#888]">{pair.name}</dt>
+                        <dd className="min-w-0 break-words text-sm leading-7 text-[#1a1a1a] [overflow-wrap:anywhere]">
                             {pair.value}
                         </dd>
                     </div>
@@ -293,7 +293,7 @@ export function ProductContentSection({
                     <button
                         type="button"
                         onClick={() => setIsExpanded((value) => !value)}
-                        className="mt-5 h-11 rounded-2xl border border-[#e7dc12] bg-[#e7dc12]/10 px-5 font-bold text-[#142137]"
+                        className="button-brand-outline mt-5 flex h-11 items-center justify-center px-5"
                     >
                         {isExpanded ? 'Свернуть' : 'Показать полностью'}
                     </button>

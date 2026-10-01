@@ -25,11 +25,12 @@ function getResponseStatus(error: unknown) {
     return null;
 }
 
-export default async function NewsDetailsPage({ params }: { params: { id: string } }) {
+export default async function NewsDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
     let newsItem;
 
     try {
-        newsItem = await fetchNewsById(params.id);
+        newsItem = await fetchNewsById(id);
     } catch (error) {
         if (getResponseStatus(error) === 404) {
             notFound();
@@ -39,39 +40,42 @@ export default async function NewsDetailsPage({ params }: { params: { id: string
     }
 
     return (
-        <section className="bg-slate-50">
-            <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
+        <section style={{ background: 'var(--gray-bg)' }}>
+            <div className="mx-auto w-full max-w-[760px] px-6 pb-20 pt-10">
                 <Link
                     href="/"
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 transition hover:text-slate-950"
+                    className="mb-6 inline-flex items-center gap-1.5 text-[13.5px] transition-colors"
+                    style={{ color: 'var(--blue-accent)' }}
                 >
-                    <ArrowLeft className="h-4 w-4" />
+                    <ArrowLeft className="h-3.5 w-3.5" />
                     Назад к главной
                 </Link>
 
-                <article className="mt-5 w-full max-w-full rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-8 lg:p-10">
-                    <p className="text-sm font-medium uppercase tracking-[0.14em] text-slate-400">
-                        {formatDate(newsItem.createdAt)}
-                    </p>
-
-                    <h1 className="mt-4 break-words text-3xl font-semibold text-slate-950 sm:text-4xl">
-                        {newsItem.title}
-                    </h1>
-
+                <article className="overflow-hidden rounded-md border border-[#e2e2e2] bg-white shadow-[0_8px_24px_rgba(0,46,109,0.08)]">
                     {newsItem.imageUrl && (
-                        <div className="relative mt-6 h-[240px] w-full overflow-hidden rounded-[1.5rem] bg-slate-100 sm:h-[320px] lg:h-[420px]">
+                        <div className="relative aspect-[16/9] w-full">
                             <Image
                                 src={newsItem.imageUrl}
                                 alt={newsItem.title}
                                 fill
                                 className="object-cover"
-                                sizes="(min-width:1024px) 960px, 100vw"
+                                sizes="760px"
                             />
                         </div>
                     )}
 
-                    <div className="mt-6 max-w-4xl whitespace-pre-line break-words text-sm leading-7 text-slate-700 sm:text-base sm:leading-8">
-                        {newsItem.content}
+                    <div className="p-8 sm:p-9">
+                        <p className="mb-2.5 font-mono text-[12.5px] text-[#999]">
+                            {formatDate(newsItem.createdAt)}
+                        </p>
+
+                        <h1 className="heading-1 mb-5.5 break-words text-2xl leading-tight">
+                            {newsItem.title}
+                        </h1>
+
+                        <div className="max-w-none whitespace-pre-line break-words text-[15px] leading-[1.75] text-[#333]">
+                            {newsItem.content}
+                        </div>
                     </div>
                 </article>
             </div>

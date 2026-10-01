@@ -1,119 +1,136 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
-import { ChevronDown, ChevronUp, Package } from 'lucide-react';
-import type { Order, OrderItem as OrderItemType } from '@/shared/api/services/orders';
+import { useRouter } from 'next/navigation';
+import { useState, useTransition } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { toast } from 'sonner';
+import { cancelOrder, type Order, type OrderItem as OrderItemType } from '@/shared/api/services/orders';
 import { formatProductPrice, isRequestPrice } from '@/shared/lib/price';
 
 interface OrderItemProps {
     order: Order;
+    token: string;
 }
 
-const STATUS_LABELS: Record<number, string> = {
-    1: 'Ожидание',
-    2: 'Обработка',
-    3: 'Отправлено',
-    4: 'Доставлено',
-    5: 'Отменено',
+export const ORDER_STATUS: Record<number, { label: string; bg: string; fg: string }> = {
+    1: { label: 'Новый', bg: '#EAF0F8', fg: '#002E6D' },
+    2: { label: 'В обработке', bg: '#FDF3DC', fg: '#7A4F00' },
+    3: { label: 'Отгружен', bg: '#ECEBFB', fg: '#3B2F99' },
+    4: { label: 'Доставлен', bg: '#E6F4EA', fg: '#1E6B3A' },
+    5: { label: 'Отменён', bg: '#F2F3F5', fg: '#4B5563' },
 };
 
-const STATUS_COLORS: Record<number, string> = {
-    1: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    2: 'bg-blue-100 text-blue-800 border-blue-200',
-    3: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-    4: 'bg-green-100 text-green-800 border-green-200',
-    5: 'bg-red-100 text-red-800 border-red-200',
-};
+function pluralizeLines(count: number) {
+    const mod100 = count % 100;
+    const mod10 = count % 10;
+    if (mod100 >= 11 && mod100 <= 14) return 'позиций';
+    if (mod10 === 1) return 'позиция';
+    if (mod10 >= 2 && mod10 <= 4) return 'позиции';
+    return 'позиций';
+}
 
-export default function OrderItem({ order }: OrderItemProps) {
+export default function OrderItem({ order, token }: OrderItemProps) {
+    const router = useRouter();
     const [isExpanded, setIsExpanded] = useState(false);
-    const statusLabel = STATUS_LABELS[order.status];
-    const statusClass = STATUS_COLORS[order.status];
+    const [isPending, startTransition] = useTransition();
+    const status = ORDER_STATUS[order.status] ?? ORDER_STATUS[1];
     const defaultCurrency = order.items[0]?.currencyCode ?? 'RUB';
-    const totalLabel = formatProductPrice(order.totalAmount, defaultCurrency);
+    const cancellable = order.status === 1 || order.status === 2;
+    const date = new Intl.DateTimeFormat('ru-RU').format(new Date(order.createdAt));
+
+    function handleCancel() {
+        if (!window.confirm(`Отменить заказ ${order.orderNumber}?`)) return;
+        startTransition(async () => {
+            try {
+                await cancelOrder(token, order.id);
+                toast.success('Заказ отменён');
+                router.refresh();
+            } catch {
+                toast.error('Не удалось отменить заказ');
+            }
+        });
+    }
 
     return (
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div
-                className="cursor-pointer p-6 transition-colors hover:bg-gray-50"
-                onClick={() => setIsExpanded(!isExpanded)}
+        <div className="border-b border-[#EDF0F3] last:border-b-0">
+            <button
+                type="button"
+                onClick={() => setIsExpanded((value) => !value)}
+                aria-expanded={isExpanded}
+                className="flex w-full flex-wrap items-center gap-x-6 gap-y-2 bg-white px-5 py-4 text-left text-[15px] text-[var(--ink)] hover:bg-[#FAFBFC]"
             >
-                <div className="flex items-center justify-between gap-4">
-                    <div className="flex min-w-0 flex-1 items-center gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100">
-                            <Package className="h-6 w-6 text-gray-500" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-gray-500">Заказ #{order.orderNumber}</p>
-                            <p className="text-2xl font-bold text-gray-900">{totalLabel}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusClass}`}>
-                            {statusLabel}
-                        </span>
-                        <button className="flex items-center rounded-lg p-2 transition-colors hover:bg-gray-100">
-                            {isExpanded ? (
-                                <ChevronUp className="h-4 w-4 text-gray-500" />
-                            ) : (
-                                <ChevronDown className="h-4 w-4 text-gray-500" />
-                            )}
-                        </button>
-                    </div>
-                </div>
-            </div>
+                <span className="min-w-0 flex-[1_1_220px] font-mono font-medium">{order.orderNumber}</span>
+                <span className="w-[110px] flex-none text-[#3D4757]">{date}</span>
+                <span className="w-[110px] flex-none text-[#3D4757]">
+                    {order.items.length} {pluralizeLines(order.items.length)}
+                </span>
+                <span className="w-[140px] flex-none text-right font-semibold">
+                    {formatProductPrice(order.totalAmount, defaultCurrency)}
+                </span>
+                <span className="w-[140px] flex-none">
+                    <span
+                        className="inline-block rounded-[3px] px-2.5 py-1 text-[13px] font-medium"
+                        style={{ background: status.bg, color: status.fg }}
+                    >
+                        {status.label}
+                    </span>
+                </span>
+                <ChevronDown
+                    className="h-[18px] w-[18px] flex-none text-[var(--muted)] transition-transform"
+                    style={{ transform: isExpanded ? 'rotate(180deg)' : undefined }}
+                    aria-hidden="true"
+                />
+            </button>
 
             {isExpanded && (
-                <div className="border-t border-gray-100 bg-gray-50">
-                    <div className="p-6">
-                        <div className="grid gap-4 md:grid-cols-3">
-                            {order.items.map((item: OrderItemType) => {
-                                const itemTotalLabel = formatProductPrice(item.totalPrice, item.currencyCode);
-                                const unitLabel = formatProductPrice(item.unitPrice, item.currencyCode);
-
-                                return (
-                                    <div
-                                        key={item.id}
-                                        className="flex items-center gap-3 rounded-xl border bg-white p-4 transition-all hover:shadow-sm"
-                                    >
-                                        {item.images[0] && (
-                                            <Image
-                                                src={item.images[0].imageUrl}
-                                                width={100}
-                                                height={100}
-                                                alt={item.productName || 'Товар'}
-                                                className="h-16 w-16 flex-shrink-0 rounded-lg object-cover"
-                                            />
-                                        )}
-                                        <div className="min-w-0 flex-1">
-                                            <Link
-                                                href={`/product/${item.productId}`}
-                                                className="block truncate font-medium text-gray-900 hover:text-blue-600"
-                                            >
-                                                {item.productName || `ID: ${item.productId.slice(-8)}`}
+                <div className="px-5 pb-5">
+                    {order.items.length > 0 ? (
+                        <table className="w-full border-collapse text-sm">
+                            <thead>
+                                <tr className="text-left text-[var(--muted)]">
+                                    <th scope="col" className="border-b border-[#EDF0F3] py-2 pr-3 font-normal">Наименование</th>
+                                    <th scope="col" className="border-b border-[#EDF0F3] px-3 py-2 text-right font-normal">Кол-во</th>
+                                    <th scope="col" className="border-b border-[#EDF0F3] py-2 pl-3 text-right font-normal">Сумма</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {order.items.map((item: OrderItemType) => (
+                                    <tr key={item.id}>
+                                        <td className="border-b border-[#F2F4F7] py-2.5 pr-3">
+                                            <Link href={`/product/${item.productId}`}>
+                                                {item.productName || `Товар ${item.productId.slice(-8)}`}
                                             </Link>
-                                            <p className="mt-1 text-sm text-gray-500">{item.brandName}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-lg font-bold text-gray-900">{itemTotalLabel}</p>
-                                            <p className="text-sm text-gray-500">
-                                                {item.quantity} x {unitLabel}
-                                            </p>
-                                            {isRequestPrice(item.unitPrice) && (
-                                                <p className="mt-1 text-xs text-gray-400">Стоимость уточняется</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                            {item.brandName && <span className="text-[var(--muted)]"> · {item.brandName}</span>}
+                                        </td>
+                                        <td className="whitespace-nowrap border-b border-[#F2F4F7] px-3 py-2.5 text-right">
+                                            {item.quantity} шт.
+                                        </td>
+                                        <td className="whitespace-nowrap border-b border-[#F2F4F7] py-2.5 pl-3 text-right">
+                                            {isRequestPrice(item.unitPrice)
+                                                ? 'уточняется'
+                                                : formatProductPrice(item.totalPrice, item.currencyCode)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <p className="py-4 text-center text-sm text-[var(--muted)]">В этом заказе нет товаров</p>
+                    )}
 
-                        {order.items.length === 0 && (
-                            <div className="py-12 text-center text-gray-500">В этом заказе нет товаров</div>
-                        )}
-                    </div>
+                    {cancellable && (
+                        <div className="mt-4 flex justify-end">
+                            <button
+                                type="button"
+                                onClick={handleCancel}
+                                disabled={isPending}
+                                className="h-10 rounded border border-[#E4B4AE] bg-white px-4 text-sm text-[#A3261A] hover:bg-red-50 disabled:opacity-50"
+                            >
+                                {isPending ? 'Отменяем…' : 'Отменить заказ'}
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

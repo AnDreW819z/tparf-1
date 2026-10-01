@@ -7,7 +7,9 @@ import { registerAction, type RegisterState } from '../actions';
 const initialState: RegisterState = { ok: false };
 
 const inputClass =
-    'h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200';
+    'h-11 w-full rounded border border-[#C9D0D8] bg-white px-3 text-[15px] text-[var(--ink)] outline-none transition focus:border-[var(--primary-blue)] focus:ring-1 focus:ring-[var(--primary-blue)]';
+
+const labelClass = 'mb-1.5 block text-[13px] text-[#444]';
 
 export function RegisterForm() {
     const [state, formAction] = useActionState(registerAction, initialState);
@@ -17,7 +19,7 @@ export function RegisterForm() {
         <>
             <form action={formAction} className="space-y-5">
                 <div>
-                    <label htmlFor="companyName" className="mb-2 block text-sm font-medium text-slate-700">
+                    <label htmlFor="companyName" className={labelClass}>
                         Название компании *
                     </label>
                     <input id="companyName" name="companyName" required className={inputClass} />
@@ -26,7 +28,7 @@ export function RegisterForm() {
 
                 <div className="grid gap-5 sm:grid-cols-2">
                     <div>
-                        <label htmlFor="inn" className="mb-2 block text-sm font-medium text-slate-700">
+                        <label htmlFor="inn" className={labelClass}>
                             ИНН *
                         </label>
                         <input
@@ -44,7 +46,7 @@ export function RegisterForm() {
                     </div>
 
                     <div>
-                        <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-700">
+                        <label htmlFor="email" className={labelClass}>
                             Email *
                         </label>
                         <input type="email" id="email" name="email" required className={inputClass} />
@@ -54,7 +56,7 @@ export function RegisterForm() {
 
                 <div className="grid gap-5 sm:grid-cols-2">
                     <div>
-                        <label htmlFor="password" className="mb-2 block text-sm font-medium text-slate-700">
+                        <label htmlFor="password" className={labelClass}>
                             Пароль *
                         </label>
                         <input type="password" id="password" name="password" required className={inputClass} />
@@ -62,7 +64,7 @@ export function RegisterForm() {
                     </div>
 
                     <div>
-                        <label htmlFor="confirm" className="mb-2 block text-sm font-medium text-slate-700">
+                        <label htmlFor="confirm" className={labelClass}>
                             Повторите пароль *
                         </label>
                         <input type="password" id="confirm" name="confirm" required className={inputClass} />
@@ -70,16 +72,17 @@ export function RegisterForm() {
                     </div>
                 </div>
 
-                <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                <label className="flex items-start gap-2.5 rounded border border-[#e2e2e2] bg-[var(--gray-bg)] px-3.5 py-3.5" style={{ cursor: 'pointer' }}>
                     <input
                         type="checkbox"
                         id="consent"
                         name="consent"
                         checked={consentChecked}
                         onChange={(event) => setConsentChecked(event.target.checked)}
-                        className="mt-0.5 h-4 w-4 rounded border-slate-300"
+                        className="mt-0.5 h-4 w-4"
+                        style={{ accentColor: 'var(--blue-accent)' }}
                     />
-                    <span>Даю согласие на обработку данных компании</span>
+                    <span className="text-[13.5px] leading-relaxed text-[#444]">Даю согласие на обработку данных компании</span>
                 </label>
                 {state.errors?.consent && <p className="text-sm text-rose-600">{state.errors.consent}</p>}
 
@@ -88,15 +91,15 @@ export function RegisterForm() {
                 <button
                     type="submit"
                     disabled={!consentChecked}
-                    className="button-brand-primary flex h-12 w-full items-center justify-center px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                    className="button-brand-primary flex h-11 w-full items-center justify-center px-4 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     Зарегистрироваться
                 </button>
             </form>
 
-            <p className="mt-6 text-center text-sm text-slate-500">
+            <p className="mt-5 text-center text-[13.5px] text-[#6b6b6b]">
                 Уже есть аккаунт?{' '}
-                <Link href="/auth/login" className="font-medium text-slate-900 transition hover:text-slate-700">
+                <Link href="/auth/login" className="font-medium text-[var(--blue-accent)] hover:text-[var(--primary-blue)]">
                     Войти
                 </Link>
             </p>

@@ -1,20 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 @import "../node_modules/tailwindcss";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --primary-yellow1: #DDD521;
-  --primary-yellow2: #EBE31B;
-  --primary-yellow3: #545006;
-  --primary-blue: #142037;
 
+  /* TPARF / ТПП РФ palette */
+  --primary-blue: #002E6D;
+  --blue-accent: #1D5393;
+  --blue-light: #4162A9;
+  --navy-deep: #00275B;
+  --navy-fold: #001C42;
+  --gold: #E89D06;
+  --gold-hover: #f5ad1e;
+  --gray-bg: #F5F7FA;
+  --card-border: #DDE2E8;
+
+  /* Редизайн 2026: строгий B2B */
+  --ink: #0F1B2D;
+  --muted: #5B6676;
+  --line: #DDE2E8;
+  --surface: #F5F7FA;
+  --page-bg: #E6EAF0;
+  --sheet-width: min(1106px, calc(100vw - 70px));
+  --sheet-left: calc(50vw - min(553px, 50vw - 35px));
+
+  --font-display: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-plex-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-plex-mono);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -25,46 +45,137 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--page-bg);
+  color: var(--ink);
+  font-family: var(--font-body);
   overflow-x: hidden;
 }
 
+/* В слое base, чтобы классы Tailwind (text-*) могли переопределять цвет ссылок */
+@layer base {
+  a {
+    color: var(--blue-accent);
+  }
+
+  a:hover {
+    color: #00398A;
+  }
+}
+
+/* Белый лист контента под центральной панелью шапки (ширина и центр совпадают с панелью) */
+.page-sheet {
+  position: relative;
+  z-index: 3;
+  box-sizing: border-box;
+  width: var(--sheet-width);
+  margin: -22px 0 0 var(--sheet-left);
+  min-height: 70vh;
+  padding: 22px 0 56px;
+  background: #ffffff;
+}
+
+.sr-only-focusable:not(:focus) {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);
+}
+
+.heading-1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.heading-2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.eyebrow {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
 .button-primary {
-  background: var(--primary-yellow1);
-  color: var(--primary-yellow3);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  color: #ffffff;
+  background: var(--primary-blue);
 }
 
 .button-primary:hover {
-  background: var(--primary-yellow2);
+  background: #00398A;
 }
 
 .button-brand-primary,
-.button-brand-secondary {
-  min-height: 3rem;
-  border-radius: 0.875rem;
+.button-brand-secondary,
+.button-brand-outline {
+  font-family: var(--font-display);
   font-weight: 600;
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+  font-size: 14px;
+  min-height: 2.75rem;
+  border-radius: 4px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
 }
 
 .button-brand-primary {
-  background: #e7dc12;
-  color: #142137;
-  border: 1px solid #e7dc12;
+  background: var(--primary-blue);
+  color: #ffffff;
+  border: 1px solid var(--primary-blue);
 }
 
 .button-brand-primary:hover {
-  background: #d9cf12;
-  border-color: #d9cf12;
+  background: #00398A;
+  border-color: #00398A;
+  color: #ffffff;
 }
 
 .button-brand-secondary {
-  background: rgba(231, 220, 18, 0.1);
-  color: #142137;
-  border: 1px solid #e7dc12;
+  background: var(--primary-blue);
+  color: #ffffff;
+  border: 1px solid var(--primary-blue);
 }
 
 .button-brand-secondary:hover {
-  background: rgba(231, 220, 18, 0.16);
+  background: #00398A;
+  border-color: #00398A;
+  color: #ffffff;
+}
+
+.button-brand-outline {
+  background: transparent;
+  color: var(--primary-blue);
+  border: 1px solid var(--primary-blue);
+}
+
+.button-brand-outline:hover {
+  background: var(--gray-bg);
+}
+
+.button-brand-primary:disabled,
+.button-brand-secondary:disabled,
+.button-brand-outline:disabled {
+  background: #ececec;
+  color: #a3a3a3;
+  border-color: #ececec;
+  cursor: not-allowed;
+}
+
+.card-surface {
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  background: #ffffff;
+  transition: border-color 0.15s ease;
+}
+
+.card-surface:hover {
+  border-color: #B8C0CB;
+}
+
+.placeholder-media {
+  background: #F0F3F7;
 }

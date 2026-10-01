@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
-import { Minus, Plus, ShoppingCart } from 'lucide-react';
+import Link from 'next/link';
+import { Check, Minus, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { OneClickBuyModal } from '@/entities/cart/ui/OneClickBuyModal';
@@ -78,11 +79,11 @@ export function ProductInfoClient({
     const quantityControlValue = isCurrentlyInCart ? currentItemQuantity : selectedQuantity;
 
     const quantityButtonClass =
-        'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50';
+        'flex h-[46px] w-12 shrink-0 items-center justify-center border-none bg-transparent text-[var(--ink)] transition hover:text-[var(--primary-blue)] disabled:cursor-not-allowed disabled:opacity-50';
     const primaryButtonClass =
-        'button-brand-primary flex min-h-12 w-full items-center justify-center gap-2 whitespace-normal px-5 py-3 text-center text-sm font-semibold leading-tight disabled:cursor-not-allowed disabled:opacity-50';
+        'button-brand-primary flex h-12 flex-[1_1_200px] items-center justify-center gap-2 px-5 text-base disabled:cursor-not-allowed disabled:opacity-50';
     const secondaryButtonClass =
-        'button-brand-secondary flex min-h-12 w-full items-center justify-center whitespace-normal px-5 py-3 text-center text-sm font-semibold leading-tight disabled:cursor-not-allowed disabled:opacity-50';
+        'flex h-12 flex-[1_1_160px] items-center justify-center rounded border border-[#C9D0D8] bg-white px-5 text-base font-medium text-[var(--ink)] transition hover:border-[#8A95A5] disabled:cursor-not-allowed disabled:opacity-50';
 
     const redirectToLogin = () => {
         toast.info('Для работы с корзиной необходимо авторизоваться');
@@ -164,40 +165,40 @@ export function ProductInfoClient({
         });
     };
 
+    const numericPrice = Number(price);
+    const showSum = !isPriceOnRequest && Number.isFinite(numericPrice) && quantityControlValue > 1;
+
     return (
         <>
-            <div className="w-full max-w-full min-w-0 rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6 lg:p-8">
-                <div className="min-w-0 space-y-5">
-                    <div className="space-y-3">
-                        <div className="text-sm font-medium uppercase tracking-[0.14em] text-slate-400">
-                            {brandName ?? 'Оборудование'}
-                        </div>
-                        <h1 className="break-words text-2xl font-semibold text-slate-950 sm:text-3xl lg:text-4xl">
-                            {name}
-                        </h1>
-                        <div className="flex min-w-0 flex-col gap-1 text-sm text-slate-600 sm:flex-row sm:flex-wrap sm:gap-6">
-                            <div className="break-words">
-                                Бренд: <span className="font-medium text-slate-900">{brandName ?? '-'}</span>
-                            </div>
-                            <div className="break-words">
-                                Артикул: <span className="font-medium text-slate-900">{sku || '-'}</span>
-                            </div>
-                        </div>
+            <div className="flex min-w-0 flex-col gap-5">
+                <div className="flex flex-col gap-2.5">
+                    <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-[var(--muted)]">
+                        <span>
+                            Арт. <span className="font-mono text-[var(--ink)]">{sku || '—'}</span>
+                        </span>
+                        {brandName && <span>Производитель: {brandName}</span>}
                     </div>
+                    <h1 className="m-0 break-words text-[clamp(22px,2.4vw,30px)] font-semibold leading-tight text-[var(--ink)]">
+                        {name}
+                    </h1>
+                </div>
 
-                    <div className="rounded-2xl bg-slate-50 p-4 sm:p-5">
-                        <div className="text-sm text-slate-500">Цена</div>
-                        <div className="mt-2 break-words text-3xl font-semibold text-slate-950">
+                <div className="flex flex-col gap-4 rounded-md border border-[var(--line)] bg-white p-6">
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <span className="break-words text-[34px] font-semibold leading-none tracking-[-0.01em] text-[var(--ink)]">
                             {formatProductPrice(price, currencyCode)}
-                        </div>
+                        </span>
+                        {!isPriceOnRequest && <span className="text-sm text-[var(--muted)]">за шт., с НДС 22%</span>}
                     </div>
 
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 sm:p-4">
-                        <div className="mb-3 text-sm font-medium text-slate-600">
-                            {isCurrentlyInCart ? 'Количество в корзине' : isPriceOnRequest ? 'Количество в заявке' : 'Количество'}
-                        </div>
-                        <div className="flex w-full max-w-full min-w-0 items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+                        <div
+                            role="group"
+                            aria-label={isCurrentlyInCart ? 'Количество в корзине' : 'Количество'}
+                            className="flex items-center rounded border border-[#C9D0D8]"
+                        >
                             <button
+                                type="button"
                                 onClick={() =>
                                     isCurrentlyInCart
                                         ? handleQuantityChange(currentItemQuantity - 1)
@@ -207,12 +208,11 @@ export function ProductInfoClient({
                                 className={quantityButtonClass}
                                 aria-label="Уменьшить количество"
                             >
-                                <Minus className="h-4 w-4" />
+                                <Minus className="h-[18px] w-[18px]" />
                             </button>
-                            <div className="flex h-11 min-w-0 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-base font-semibold text-slate-950">
-                                {quantityControlValue}
-                            </div>
+                            <span className="min-w-11 text-center font-mono text-base font-medium">{quantityControlValue}</span>
                             <button
+                                type="button"
                                 onClick={() =>
                                     isCurrentlyInCart
                                         ? handleQuantityChange(currentItemQuantity + 1)
@@ -222,41 +222,52 @@ export function ProductInfoClient({
                                 className={quantityButtonClass}
                                 aria-label="Увеличить количество"
                             >
-                                <Plus className="h-4 w-4" />
+                                <Plus className="h-[18px] w-[18px]" />
                             </button>
                         </div>
-                    </div>
 
-                    {!isCurrentlyInCart ? (
-                        <div className="flex flex-col gap-3 sm:grid sm:grid-cols-2">
+                        {isCurrentlyInCart ? (
+                            <Link
+                                href="/cart"
+                                className="flex h-12 flex-[1_1_200px] items-center justify-center gap-2 rounded border border-[var(--primary-blue)] px-5 text-base font-semibold text-[var(--primary-blue)]"
+                            >
+                                <Check className="h-[18px] w-[18px]" strokeWidth={2.4} aria-hidden="true" />
+                                В корзине — перейти
+                            </Link>
+                        ) : (
                             <button
+                                type="button"
                                 onClick={() => handleAddToCart(selectedQuantity)}
                                 disabled={isPending}
                                 className={primaryButtonClass}
                             >
-                                <ShoppingCart className="h-5 w-5" />
                                 {primaryActionLabel}
                             </button>
-                            <button
-                                onClick={() => setShowOneClickModal(true)}
-                                disabled={isPending}
-                                className={secondaryButtonClass}
-                            >
-                                {secondaryActionLabel}
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-3 sm:grid sm:grid-cols-2">
-                            <button
-                                onClick={() => setShowOneClickModal(true)}
-                                disabled={isPending}
-                                className={secondaryButtonClass}
-                            >
-                                {secondaryActionLabel}
-                            </button>
+                        )}
+
+                        <button
+                            type="button"
+                            onClick={() => setShowOneClickModal(true)}
+                            disabled={isPending}
+                            className={secondaryButtonClass}
+                        >
+                            {secondaryActionLabel}
+                        </button>
+                    </div>
+
+                    {showSum && (
+                        <div className="flex flex-wrap justify-between gap-2 border-t border-[#EDF0F3] pt-3.5 text-sm">
+                            <span className="text-[var(--muted)]">Сумма за {quantityControlValue} шт.</span>
+                            <span className="font-semibold">{formatProductPrice(numericPrice * quantityControlValue, currencyCode)}</span>
                         </div>
                     )}
                 </div>
+
+                <p className="m-0 text-sm leading-relaxed text-[var(--muted)]">
+                    Нужно другое количество или подбор аналога? Позвоните{' '}
+                    <a href="tel:+79607957523" className="font-semibold">+7 (960) 795-75-23</a> или напишите на{' '}
+                    <a href="mailto:tpa@tparf.ru">tpa@tparf.ru</a>.
+                </p>
             </div>
 
             <OneClickBuyModal

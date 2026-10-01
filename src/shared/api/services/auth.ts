@@ -7,7 +7,7 @@ export type RegisterPayload = {
     email: string;
     password: string;
     companyName: string;
-    inn: number;
+    inn: string;
 };
 
 export type RegisterResponse = {
@@ -81,7 +81,7 @@ export type User = {
     id: string;
     email: string;
     companyName: string | null;
-    inn: number | null;
+    inn: string | null;
     isActive: boolean;
     emailConfirmed: boolean;
     roles: string[];

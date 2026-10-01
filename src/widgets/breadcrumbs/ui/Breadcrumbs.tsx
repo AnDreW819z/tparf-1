@@ -29,22 +29,22 @@ export function Breadcrumbs({ crumbs, className, currentName }: Props) {
     }
 
     return (
-        <nav aria-label="breadcrumbs" className={className}>
-            <ol className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+        <nav aria-label="Хлебные крошки" className={className}>
+            <ol className="m-0 flex list-none flex-wrap items-center gap-1.5 p-0 text-[13px] text-[var(--muted)]">
                 {fullCrumbs.map((c, i) => {
                     const isLast = i === fullCrumbs.length - 1;
                     return (
-                        <li key={`${c.id || 'breadcrumb'}-${i}`} className="flex items-center">
+                        <li key={`${c.id || 'breadcrumb'}-${i}`} className="flex items-center gap-1.5">
                             {isLast ? (
-                                <span className="font-medium text-gray-900">{c.title}</span>
+                                <span aria-current="page" className="text-[var(--ink)]">{c.title}</span>
                             ) : c.href ? (
-                                <Link href={c.href} className="hover:underline hover:text-blue-600 transition-colors">
+                                <Link href={c.href} className="text-[var(--muted)] transition-colors hover:text-[var(--primary-blue)]">
                                     {c.title}
                                 </Link>
                             ) : (
                                 <span>{c.title}</span>
                             )}
-                            {!isLast && <span className="mx-2 select-none text-gray-400 text-xs">{'>'}</span>}
+                            {!isLast && <span className="select-none" aria-hidden="true">/</span>}
                         </li>
                     );
                 })}

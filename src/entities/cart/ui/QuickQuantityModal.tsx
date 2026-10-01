@@ -56,10 +56,10 @@ export function QuickQuantityModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-            <div className="relative max-h-[90vh] w-full max-w-sm overflow-hidden rounded-[1.5rem] bg-white shadow-2xl">
+            <div className="relative max-h-[90vh] w-full max-w-sm overflow-hidden rounded-md bg-white shadow-2xl">
                 <div className="border-b border-gray-200 p-6 pb-4">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-gray-900">Быстрое количество</h3>
+                        <h3 className="heading-1 text-lg">Быстрое количество</h3>
                         <button
                             onClick={onClose}
                             className="rounded-lg p-1.5 transition-colors hover:bg-gray-100"
@@ -96,7 +96,7 @@ export function QuickQuantityModal({
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="button-brand-secondary flex-1 px-4 py-2.5 text-sm font-medium disabled:opacity-50"
+                                className="button-brand-outline flex-1 px-4 py-2.5 text-sm font-medium disabled:opacity-50"
                                 disabled={loading}
                             >
                                 Отмена

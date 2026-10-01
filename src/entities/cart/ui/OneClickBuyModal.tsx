@@ -63,11 +63,11 @@ export function OneClickBuyModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-            <div className="relative mx-4 w-full max-w-md rounded-[1.5rem] bg-white shadow-2xl">
+            <div className="relative mx-4 w-full max-w-md rounded-md bg-white shadow-2xl">
                 <div className="border-b border-slate-200 bg-slate-50 p-6 pb-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h3 className="flex items-center gap-2 text-xl font-semibold text-slate-950">
+                            <h3 className="flex items-center gap-2 heading-1 text-xl">
                                 <ShoppingBag className="h-5 w-5 text-slate-700" />
                                 {title}
                             </h3>

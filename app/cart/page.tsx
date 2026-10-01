@@ -13,16 +13,11 @@ export default async function CartPage() {
     try {
         const cart = await getCart(token);
         return <CartPageClient cart={cart} user={user} />;
-    } catch (err: any) {
-        if (err?.response?.status === 401 || err?.response?.status === 403) {
+    } catch (err: unknown) {
+        const status = (err as { response?: { status?: number } } | null)?.response?.status;
+        if (status === 401 || status === 403) {
             redirect('/auth/login');
         }
         throw err;
     }
-}
-
-// Вспомогательная функция
-function getCookieValue(name: string): string | undefined {
-    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-    return match ? match[2] : undefined;
 }

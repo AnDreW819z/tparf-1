@@ -8,7 +8,7 @@ import { loginAction, type LoginState } from '@/features/auth/actions';
 const initialState: LoginState = { ok: false };
 
 const inputClass =
-    'h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200';
+    'h-11 w-full rounded border border-[#C9D0D8] bg-white px-3 text-[15px] text-[var(--ink)] outline-none transition focus:border-[var(--primary-blue)] focus:ring-1 focus:ring-[var(--primary-blue)]';
 
 function SubmitBtn() {
     const { pending } = useFormStatus();
@@ -17,7 +17,7 @@ function SubmitBtn() {
         <button
             type="submit"
             disabled={pending}
-            className="button-brand-primary flex h-12 w-full items-center justify-center px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+            className="button-brand-primary flex h-11 w-full items-center justify-center px-4 disabled:cursor-not-allowed disabled:opacity-50"
         >
             {pending ? 'Входим...' : 'Войти'}
         </button>
@@ -31,13 +31,13 @@ export function LoginForm() {
         <>
             <form action={formAction} className="space-y-5">
                 <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">Email</label>
+                    <label className="mb-1.5 block text-sm font-medium text-[var(--ink)]">Email</label>
                     <input type="email" name="email" className={inputClass} required autoComplete="email" />
                     {state.errors?.email && <p className="mt-2 text-sm text-rose-600">{state.errors.email}</p>}
                 </div>
 
                 <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">Пароль</label>
+                    <label className="mb-1.5 block text-sm font-medium text-[var(--ink)]">Пароль</label>
                     <input
                         type="password"
                         name="password"
@@ -53,9 +53,9 @@ export function LoginForm() {
                 <SubmitBtn />
             </form>
 
-            <p className="mt-6 text-center text-sm text-slate-500">
+            <p className="mt-5 text-center text-[13.5px] text-[#6b6b6b]">
                 Нет аккаунта?{' '}
-                <Link href="/auth/register" className="font-medium text-slate-900 transition hover:text-slate-700">
+                <Link href="/auth/register" className="font-medium text-[var(--blue-accent)] hover:text-[var(--primary-blue)]">
                     Зарегистрироваться
                 </Link>
             </p>

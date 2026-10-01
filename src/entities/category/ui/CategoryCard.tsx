@@ -8,27 +8,16 @@ export type CategoryCardProps = {
     name: string;
     href?: string;
     subtitle?: string;
-    imageUrl?: string | null; // добавлено
+    imageUrl?: string | null;
     className?: string;
 };
 
 export function CategoryCard({ id, name, href, subtitle, imageUrl, className }: CategoryCardProps) {
     const to = href ?? `/catalog/${id}`;
-    const src = imageUrl || '/placeholder.png'; // если logoUrl нет — показываем плейсхолдер
+    const src = imageUrl || '/placeholder.png';
     return (
-        <Link
-            href={to}
-            className={clsx(
-                // базовый бордер и цвет текста
-                'rounded-lg border border-[#DDDDDD] bg-white text-[#767676]',
-                // ховер-эффект
-                'transition-transform transition-colors duration-200 ease-out hover:scale-[1.02] hover:border-[#646464]',
-                // содержимое
-                'p-5 flex flex-col gap-3',
-                className
-            )}
-        >
-            <div className="relative w-full aspect-[16/9] overflow-hidden rounded border border-[#DDDDDD] bg-white">
+        <Link href={to} className={clsx('card-surface block overflow-hidden', className)}>
+            <div className="placeholder-media relative aspect-[16/10] w-full">
                 <Image
                     src={src}
                     alt={name}
@@ -37,9 +26,11 @@ export function CategoryCard({ id, name, href, subtitle, imageUrl, className }: 
                     sizes="(min-width:1280px) 25vw, (min-width:1024px) 33vw, 50vw"
                 />
             </div>
-            <div>
-                <div className="text-base font-semibold text-[#767676]">{name}</div>
-                {subtitle && <div className="mt-1 text-xs text-[#767676]">{subtitle}</div>}
+            <div className="p-4">
+                <div className="mb-1 text-[15px] font-bold text-[#1a1a1a]" style={{ fontFamily: 'var(--font-display)' }}>
+                    {name}
+                </div>
+                {subtitle && <div className="text-[13px] text-[#888]">{subtitle}</div>}
             </div>
         </Link>
     );

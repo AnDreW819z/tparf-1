@@ -6,7 +6,7 @@ export type ProductGridItem = ProductCardProps;
 
 export function ProductGrid({ items }: { items: ProductGridItem[] }) {
     return (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid w-full gap-x-6 gap-y-10 [grid-template-columns:repeat(auto-fill,minmax(200px,1fr))]">
             {items.map((it) => (
                 <ProductCard key={it.id} {...it} />
             ))}

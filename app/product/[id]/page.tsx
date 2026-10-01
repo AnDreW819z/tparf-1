@@ -22,12 +22,13 @@ function getResponseStatus(error: unknown) {
     return null;
 }
 
-export default async function ProductPage({ params }: { params: { id: string } }) {
+export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
     let product;
     let initialCartInfo = null;
 
     try {
-        product = await fetchProductById(params.id);
+        product = await fetchProductById(id);
     } catch (error) {
         if (getResponseStatus(error) === 404) {
             notFound();
@@ -40,7 +41,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
     if (user?.token) {
         try {
             const cart = await getCart(user.token);
-            const cartItem = cart.items.find((item) => item.productId === params.id);
+            const cartItem = cart.items.find((item) => item.productId === id);
             initialCartInfo = cartItem
                 ? { inCart: true, quantity: cartItem.quantity }
                 : { inCart: false, quantity: 0 };
@@ -57,10 +58,10 @@ export default async function ProductPage({ params }: { params: { id: string } }
     const images = product.images ?? [];
 
     return (
-        <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-            <Breadcrumbs crumbs={crumbs} className="mb-6" />
+        <section className="w-full px-7 pb-20 pt-7">
+            <Breadcrumbs crumbs={crumbs} className="mb-5" />
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(360px,520px)] lg:items-start">
+            <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-start">
                 <div className="min-w-0">
                     <ProductGallery images={images} alt={product.name} />
                 </div>
@@ -78,7 +79,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
                 </div>
             </div>
 
-            <div className="mt-10 grid grid-cols-1 gap-6 sm:mt-12">
+            <div className="mt-12 grid grid-cols-1 gap-6">
                 <div className="min-w-0">
                     <ProductContentSection
                         descriptions={product.descriptions || []}

@@ -20,69 +20,75 @@ export function NewsSection({ items, showEmptyState = false }: NewsSectionProps)
     }
 
     return (
-        <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
-            <div className="overflow-hidden rounded-[28px] bg-[var(--primary-blue)] text-white shadow-[0_22px_70px_rgba(20,32,55,0.16)]">
-                <div className="px-5 py-6 sm:px-8 sm:py-8 lg:px-10">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-[var(--primary-yellow1)]">
-                            <Newspaper className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
-                                Информация
-                            </p>
-                            <h2 className="mt-1 text-2xl font-semibold sm:text-3xl">
-                                Новости и обновления
-                            </h2>
-                        </div>
-                    </div>
-
-                    {items.length > 0 ? (
-                        <div className="mt-6 grid gap-4 lg:grid-cols-3">
-                            {items.slice(0, 3).map((item) => (
-                                <Link
-                                    key={item.id}
-                                    href={`/news/${item.id}`}
-                                    className="group block overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.06] backdrop-blur-sm transition hover:border-white/20 hover:bg-white/[0.09]"
-                                >
-                                    {item.imageUrl && (
-                                        <div className="relative h-44 w-full overflow-hidden">
-                                            <Image
-                                                src={item.imageUrl}
-                                                alt={item.title}
-                                                fill
-                                                className="object-cover transition duration-300 group-hover:scale-[1.03]"
-                                                sizes="(min-width:1024px) 33vw, 100vw"
-                                            />
-                                        </div>
-                                    )}
-                                    <article className="flex min-h-[250px] flex-col p-5">
-                                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
-                                            {formatDate(item.createdAt)}
-                                        </p>
-                                        <h3 className="mt-3 text-xl font-semibold text-white transition group-hover:text-[var(--primary-yellow1)]">
-                                            {item.title}
-                                        </h3>
-                                        <p className="mt-3 line-clamp-5 flex-1 text-sm leading-6 text-slate-200">
-                                            {item.content}
-                                        </p>
-                                        <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary-yellow1)]">
-                                            <span>Читать полностью</span>
-                                            <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                                        </div>
-                                    </article>
-                                </Link>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="mt-6 rounded-[22px] border border-dashed border-white/15 bg-white/[0.04] p-5 text-sm text-slate-200">
-                            Новости ещё не добавлены.{' '}
-                            <Link href="/admin" className="font-semibold text-[var(--primary-yellow1)] hover:underline">
-                                Открыть админ-панель
-                            </Link>
-                        </div>
-                    )}
+        <section className="mx-auto my-14 max-w-[1280px] px-6">
+            <div className="rounded-md p-10" style={{ background: 'var(--primary-blue)' }}>
+                <div className="mb-7 flex items-center gap-3">
+                    <span
+                        className="flex h-8 w-8 flex-none items-center justify-center rounded"
+                        style={{ background: 'var(--gold)' }}
+                    >
+                        <Newspaper className="h-4 w-4" style={{ color: 'var(--primary-blue)' }} />
+                    </span>
+                    <h2 className="heading-1 text-[22px]" style={{ color: '#ffffff' }}>
+                        Информация / Новости и обновления
+                    </h2>
                 </div>
+
+                {items.length > 0 ? (
+                    <div className="grid gap-5 lg:grid-cols-3">
+                        {items.slice(0, 3).map((item) => (
+                            <Link
+                                key={item.id}
+                                href={`/news/${item.id}`}
+                                className="group block overflow-hidden rounded-md border transition"
+                                style={{ borderColor: 'rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.08)' }}
+                            >
+                                {item.imageUrl && (
+                                    <div className="relative aspect-[16/9] w-full overflow-hidden">
+                                        <Image
+                                            src={item.imageUrl}
+                                            alt={item.title}
+                                            fill
+                                            className="object-cover transition duration-300 group-hover:scale-[1.03]"
+                                            sizes="(min-width:1024px) 33vw, 100vw"
+                                        />
+                                    </div>
+                                )}
+                                <article className="p-4.5">
+                                    <p className="mb-2 font-mono text-xs" style={{ color: '#9fb2cf' }}>
+                                        {formatDate(item.createdAt)}
+                                    </p>
+                                    <h3
+                                        className="mb-2 text-base font-bold leading-snug text-white"
+                                        style={{ fontFamily: 'var(--font-display)' }}
+                                    >
+                                        {item.title}
+                                    </h3>
+                                    <p className="mb-3.5 line-clamp-3 text-[13.5px] leading-relaxed" style={{ color: '#c3cfe4' }}>
+                                        {item.content}
+                                    </p>
+                                    <div
+                                        className="inline-flex items-center gap-1.5 text-[13px] font-bold uppercase tracking-wide"
+                                        style={{ fontFamily: 'var(--font-display)', color: 'var(--gold)' }}
+                                    >
+                                        <span>Читать полностью</span>
+                                        <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-1" />
+                                    </div>
+                                </article>
+                            </Link>
+                        ))}
+                    </div>
+                ) : (
+                    <div
+                        className="rounded-md border border-dashed p-5 text-sm"
+                        style={{ borderColor: 'rgba(255,255,255,0.3)', color: '#9fb2cf' }}
+                    >
+                        Новости ещё не добавлены.{' '}
+                        <Link href="/admin" className="font-bold" style={{ color: 'var(--gold)' }}>
+                            Открыть админ-панель
+                        </Link>
+                    </div>
+                )}
             </div>
         </section>
     );

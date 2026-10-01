@@ -1,23 +1,28 @@
 'use client';
 
 import { useTransition } from 'react';
-import { ArrowRight, ShoppingBag } from 'lucide-react';
 import { createOrderFromCart } from '@/shared/api/services/orders';
-import { calculateKnownTotal, formatCartTotal, hasRequestPriceItems } from '@/shared/lib/price';
+import { calculateKnownTotal, formatCartTotal, formatProductPrice, hasRequestPriceItems } from '@/shared/lib/price';
 import { useCartStore, type CartItemType } from '@/shared/store/useCartStore';
 import { toast } from 'sonner';
 
 interface Props {
     items: CartItemType[];
     token: string;
+    companyName?: string | null;
+    inn?: string | null;
 }
 
-export default function CartSummary({ items, token }: Props) {
+export default function CartSummary({ items, token, companyName, inn }: Props) {
     const [isPending, startTransition] = useTransition();
     const { fetchCart } = useCartStore();
     const totalLabel = formatCartTotal(items);
     const hasRequestItems = hasRequestPriceItems(items);
     const knownTotal = calculateKnownTotal(items);
+    const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+    const currencyCode = items.find((item) => item.currencyCode)?.currencyCode ?? 'RUB';
+    // Цены в каталоге указаны с НДС 22%: выделяем налог из суммы
+    const vat = Math.round(((knownTotal * 22) / 122) * 100) / 100;
 
     const handleCheckout = () => {
         startTransition(async () => {
@@ -34,42 +39,52 @@ export default function CartSummary({ items, token }: Props) {
     };
 
     return (
-        <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
-            <div className="mb-6 flex items-center justify-between gap-4">
-                <div className="text-xl font-semibold text-gray-900">Итого к оформлению</div>
-                <div className="text-right">
-                    <div className="text-2xl font-bold text-slate-950 sm:text-3xl">{totalLabel}</div>
-                    {hasRequestItems && knownTotal > 0 && (
-                        <div className="mt-1 text-sm text-slate-500">Есть позиции по запросу</div>
+        <aside aria-label="Итого" className="sticky top-6 flex flex-col gap-4 rounded-md border border-[var(--line)] p-6">
+            <h2 className="m-0 text-xl font-semibold">Итого к оформлению</h2>
+
+            <dl className="m-0 flex flex-col gap-2.5 text-[15px]">
+                <div className="flex justify-between gap-3">
+                    <dt className="text-[var(--muted)]">Товаров</dt>
+                    <dd className="m-0">{itemCount} шт.</dd>
+                </div>
+                {knownTotal > 0 && (
+                    <div className="flex justify-between gap-3">
+                        <dt className="text-[var(--muted)]">В т. ч. НДС 22%</dt>
+                        <dd className="m-0">{formatProductPrice(vat, currencyCode)}</dd>
+                    </div>
+                )}
+                <div className="flex justify-between gap-3 border-t border-[#EDF0F3] pt-3 text-[22px] font-semibold">
+                    <dt>Итого</dt>
+                    <dd className="m-0 text-right">{totalLabel}</dd>
+                </div>
+            </dl>
+            {hasRequestItems && knownTotal > 0 && (
+                <p className="m-0 -mt-2 text-sm text-[var(--muted)]">Есть позиции по запросу — их цену подтвердит менеджер.</p>
+            )}
+
+            {(companyName || inn) && (
+                <div className="flex flex-col gap-0.5 rounded bg-[var(--surface)] px-4 py-3.5 text-sm">
+                    <span className="text-[var(--muted)]">Покупатель</span>
+                    {companyName && <span className="font-semibold">{companyName}</span>}
+                    {inn && (
+                        <span className="text-[var(--muted)]">
+                            ИНН <span className="font-mono text-[var(--ink)]">{inn}</span>
+                        </span>
                     )}
                 </div>
-            </div>
+            )}
 
             <button
+                type="button"
                 onClick={handleCheckout}
                 disabled={isPending}
-                className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-[#f2c94c] text-lg font-bold text-slate-950 transition hover:bg-[#e5bc42] disabled:cursor-not-allowed disabled:opacity-50"
+                className="button-brand-primary flex h-[52px] w-full items-center justify-center text-base disabled:cursor-not-allowed disabled:opacity-50"
             >
-                {isPending ? (
-                    <>
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-500/30 border-t-slate-900" />
-                        Оформляем...
-                    </>
-                ) : (
-                    <>
-                        <ShoppingBag className="h-6 w-6" />
-                        Оформить заказ
-                        <ArrowRight className="h-5 w-5" />
-                    </>
-                )}
+                {isPending ? 'Оформляем…' : 'Оформить заказ'}
             </button>
-
-            <div className="mt-6 border-t border-gray-100 pt-6">
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <div className="h-2 w-2 rounded-full bg-[#f2c94c]" />
-                    <span>{hasRequestItems && knownTotal <= 0 ? 'Стоимость уточняется по запросу.' : 'Итог рассчитан по текущим ценам корзины.'}</span>
-                </div>
-            </div>
-        </div>
+            <p className="m-0 text-[13px] leading-normal text-[var(--muted)]">
+                После оформления заказ появится в разделе «Заказы», там же можно следить за статусом.
+            </p>
+        </aside>
     );
 }

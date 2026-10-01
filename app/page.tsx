@@ -1,197 +1,245 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, Building2, PackageSearch, ShieldCheck, Truck } from 'lucide-react';
-import { CategoryGrid } from '@/entities/category/ui/CategoryGrid';
+import { ArrowRight, ImageIcon, Search, ShieldCheck, Truck } from 'lucide-react';
+import { CategoryOverviewGrid } from '@/entities/category/ui/CategoryOverviewGrid';
 import { canAccessAdminPanel } from '@/shared/lib/access';
 import { fetchAllBrands } from '@/shared/api/services/brands';
 import { fetchRootCategories } from '@/shared/api/services/categories';
 import { fetchNews, type NewsItem } from '@/shared/api/services/news';
 import { getUserFromCookie } from '@/shared/server/auth';
-import { Hero } from '@/widgets/hero/ui/Hero';
-import { NewsSection } from '@/widgets/news/ui/NewsSection';
 
 export const revalidate = 300;
 
 const advantages = [
     {
-        icon: PackageSearch,
+        icon: Search,
         title: 'Точный подбор позиций',
-        description: 'Подбираем оборудование и комплектующие под реальные задачи снабжения, а не только по артикулу.',
+        description: 'Подбираем оборудование под реальные задачи снабжения, а не только по артикулу.',
     },
     {
         icon: ShieldCheck,
         title: 'Проверенные поставки',
-        description: 'Собираем рабочие решения для B2B-заказов с понятной логикой комплектации и сопровождения.',
+        description: 'Рабочие решения для B2B-заказов с понятной логикой комплектации и сопровождения.',
     },
     {
         icon: Truck,
         title: 'Отгрузка по РФ',
-        description: 'Сопровождаем поставки по России и помогаем быстро перейти от поиска к оформлению заказа.',
+        description: 'Сопровождаем поставки по России, помогаем быстро перейти от поиска к оформлению заказа.',
     },
 ];
 
+type HomeCategory = {
+    id: string;
+    name: string;
+    imageUrl: string | null;
+    children: { id: string; name: string }[];
+};
+
+type HomeBrand = { id: string; name: string; logoUrl: string | null };
+
+function formatDate(value: string) {
+    return new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value));
+}
+
+function excerpt(text: string, max = 220) {
+    const clean = text.replace(/\s+/g, ' ').trim();
+    return clean.length > max ? `${clean.slice(0, max).trimEnd()}…` : clean;
+}
+
+function SectionTitle({ title, href, linkLabel }: { title: string; href?: string; linkLabel?: string }) {
+    return (
+        <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
+            <h2 className="text-[28px] font-semibold text-[var(--ink)]">{title}</h2>
+            {href && linkLabel && (
+                <Link href={href} className="inline-flex items-center gap-1.5 font-medium">
+                    {linkLabel}
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+            )}
+        </div>
+    );
+}
+
 export default async function Home() {
-    let categoryItems: Array<{
-        id: string;
-        name: string;
-        childrenCount?: number;
-        imageUrl?: string | null;
-    }> = [];
-
-    let brandItems: Array<{
-        id: string;
-        name: string;
-        description: string | null;
-        logoUrl: string | null;
-        countryOfOrigin: string | null;
-    }> = [];
-
-    let newsItems: NewsItem[] = [];
+    let categories: HomeCategory[] = [];
+    let brands: HomeBrand[] = [];
+    let news: NewsItem[] = [];
     const user = await getUserFromCookie();
     const canManageNews = canAccessAdminPanel(user);
 
     try {
         const roots = await fetchRootCategories();
-        categoryItems = roots.slice(0, 6).map((category) => ({
+        categories = roots.slice(0, 6).map((category) => ({
             id: category.id,
             name: category.name,
-            childrenCount: category.children?.length ?? undefined,
             imageUrl: category.logoUrl,
+            children: (category.children ?? []).slice(0, 4).map((child) => ({ id: child.id, name: child.name })),
         }));
     } catch (error) {
         console.error('Failed to load categories for home page', error);
     }
 
     try {
-        const brands = await fetchAllBrands();
-        brandItems = brands
+        brands = (await fetchAllBrands())
             .filter((brand) => brand.isActive)
             .slice(0, 8)
-            .map((brand) => ({
-                id: brand.id,
-                name: brand.name,
-                description: brand.description,
-                logoUrl: brand.logoUrl,
-                countryOfOrigin: brand.countryOfOrigin,
-            }));
+            .map((brand) => ({ id: brand.id, name: brand.name, logoUrl: brand.logoUrl }));
     } catch (error) {
         console.error('Failed to load brands for home page', error);
     }
 
     try {
-        newsItems = (await fetchNews()).slice(0, 3);
+        news = (await fetchNews()).slice(0, 5);
     } catch (error) {
         console.error('Failed to load news for home page', error);
     }
 
+    const [leadNews, ...feed] = news;
+
     return (
-        <div className="bg-[linear-gradient(180deg,#f2f4f7_0%,#ffffff_18%,#f8fafc_100%)]">
-            <Hero />
-            <NewsSection items={newsItems} showEmptyState={canManageNews} />
-
-            <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                    <div className="max-w-3xl">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                            Каталог
-                        </p>
-                        <h2 className="mt-2 text-2xl font-semibold text-slate-950 sm:text-3xl">
-                            Основные категории оборудования
-                        </h2>
+        <div>
+            {/* Представление агентства (по ТЗ: лого, название, слоган и текст вместо фото) */}
+            <section
+                aria-label="О компании"
+                className="flex flex-wrap items-center gap-x-10 gap-y-6 border-b border-[var(--line)] px-7 pb-8 pt-9"
+            >
+                <div className="flex min-w-0 flex-[1_1_420px] flex-wrap items-center gap-5">
+                    <Image src="/Logo.png" alt="" width={173} height={76} className="h-[60px] w-auto flex-none sm:h-[76px]" priority />
+                    <div className="flex min-w-0 flex-col gap-1.5">
+                        <h1 className="text-[clamp(20px,5vw,26px)] font-bold uppercase leading-tight tracking-[0.02em] text-[var(--primary-blue)]">
+                            Торгово-промышленное агентство
+                        </h1>
+                        <span className="text-sm font-medium uppercase tracking-[0.06em] text-[var(--muted)]">
+                            В интересах бизнеса, во благо человечества
+                        </span>
                     </div>
-                    <Link
-                        href="/catalog"
-                        className="inline-flex items-center gap-2 self-start rounded-full bg-[var(--primary-blue)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1b2b49]"
-                    >
-                        Весь каталог
-                        <ArrowRight className="h-4 w-4" />
-                    </Link>
                 </div>
+                <p className="m-0 flex-[1_1_360px] border-l-[3px] border-[var(--gold)] pl-6 text-base leading-relaxed text-[#26303E]">
+                    Комплексное обеспечение предприятий на территории Российской Федерации и экспорт продукции на мировой рынок.
+                </p>
+            </section>
 
-                <div className="mt-6 sm:mt-8">
-                    {categoryItems.length > 0 ? (
-                        <CategoryGrid items={categoryItems} parentLevel={0} />
-                    ) : (
-                        <div className="rounded-[24px] border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-600">
-                            Категории загрузятся здесь, как только API вернет данные.
+            {/* Новости: главная новость + информационный столбик (лента и контакты) */}
+            <section className="px-7 pb-6 pt-10">
+                <SectionTitle title="Новости и обновления" />
+                <div className="flex flex-wrap items-start gap-8">
+                    <div className="min-w-0 flex-[2_1_460px]">
+                        {leadNews ? (
+                            <article className="flex flex-col gap-3">
+                                <Link
+                                    href={`/news/${leadNews.id}`}
+                                    className="relative block aspect-video overflow-hidden rounded-md bg-[#F0F3F7]"
+                                    aria-label={leadNews.title}
+                                >
+                                    {leadNews.imageUrl ? (
+                                        <Image
+                                            src={leadNews.imageUrl}
+                                            alt=""
+                                            fill
+                                            className="object-cover"
+                                            sizes="(min-width:1024px) 640px, 100vw"
+                                        />
+                                    ) : (
+                                        <span className="flex h-full items-center justify-center text-[#8A95A5]">
+                                            <ImageIcon className="h-8 w-8" aria-hidden="true" />
+                                        </span>
+                                    )}
+                                </Link>
+                                <span className="font-mono text-[13px] text-[var(--muted)]">{formatDate(leadNews.createdAt)}</span>
+                                <Link href={`/news/${leadNews.id}`} className="text-[22px] font-semibold leading-snug text-[var(--ink)]">
+                                    {leadNews.title}
+                                </Link>
+                                <p className="m-0 text-[15px] leading-relaxed text-[#3D4757]">{excerpt(leadNews.content)}</p>
+                            </article>
+                        ) : (
+                            <div className="rounded-md border border-dashed border-[#C9D0D8] p-8 text-sm text-[var(--muted)]">
+                                Новости ещё не добавлены.
+                                {canManageNews && (
+                                    <>
+                                        {' '}
+                                        <Link href="/admin" className="font-semibold">
+                                            Добавить в админ-панели
+                                        </Link>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    <aside className="flex min-w-0 flex-[1_1_280px] flex-col gap-6">
+                        {feed.length > 0 && (
+                            <div className="flex flex-col">
+                                <span className="border-b-2 border-[var(--primary-blue)] pb-2.5 text-xs font-semibold uppercase tracking-[0.06em] text-[var(--muted)]">
+                                    Лента
+                                </span>
+                                {feed.map((item) => (
+                                    <Link
+                                        key={item.id}
+                                        href={`/news/${item.id}`}
+                                        className="flex flex-col gap-1 border-b border-[#EDF0F3] py-3.5 text-[var(--ink)]"
+                                    >
+                                        <span className="font-mono text-xs text-[var(--muted)]">{formatDate(item.createdAt)}</span>
+                                        <span className="text-[15px] font-medium leading-snug">{item.title}</span>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="flex flex-col gap-2 rounded-md bg-[var(--surface)] p-5 text-sm">
+                            <span className="mb-1 text-xs font-semibold uppercase tracking-[0.06em] text-[var(--muted)]">Контакты</span>
+                            <a href="tel:+79607957523" className="text-base font-semibold text-[var(--ink)]">+7 (960) 795-75-23</a>
+                            <a href="tel:+79618722751" className="text-base font-semibold text-[var(--ink)]">+7 (961) 872-27-51</a>
+                            <a href="mailto:tpa@tparf.ru">tpa@tparf.ru</a>
+                            <span className="text-[#3D4757]">630132, г. Новосибирск, ул. Нарымская, д. 9</span>
                         </div>
-                    )}
+                    </aside>
                 </div>
             </section>
 
-            <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                    <div className="max-w-3xl">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                            Партнеры
-                        </p>
-                        <h2 className="mt-2 text-2xl font-semibold text-slate-950 sm:text-3xl">
-                            Производители и поставщики
-                        </h2>
+            {/* Каталог */}
+            <section className="px-7 pb-6 pt-14">
+                <SectionTitle title="Каталог" href="/catalog" linkLabel="Все категории" />
+                {categories.length > 0 ? (
+                    <CategoryOverviewGrid items={categories} />
+                ) : (
+                    <div className="rounded-md border border-dashed border-[#C9D0D8] p-6 text-sm text-[var(--muted)]">
+                        Категории появятся здесь, как только API вернёт данные.
                     </div>
-                </div>
+                )}
+            </section>
 
-                <div className="mt-6 grid gap-4 sm:mt-8 sm:grid-cols-2 xl:grid-cols-4">
-                    {brandItems.length > 0 ? (
-                        brandItems.map((brand) => (
+            {/* Производители */}
+            {brands.length > 0 && (
+                <section className="px-7 py-10">
+                    <SectionTitle title="Производители" />
+                    <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(150px,1fr))]">
+                        {brands.map((brand) => (
                             <Link
                                 key={brand.id}
                                 href={`/search?SearchQuery=${encodeURIComponent(brand.name)}`}
-                                className="group rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_16px_45px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:border-slate-300"
+                                className="relative flex h-[72px] items-center justify-center rounded border border-[var(--line)] px-3 text-[15px] font-bold tracking-[0.06em] text-[#3D4757] hover:border-[#B8C0CB]"
                             >
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50">
-                                        {brand.logoUrl ? (
-                                            <Image
-                                                src={brand.logoUrl}
-                                                alt={brand.name}
-                                                width={56}
-                                                height={56}
-                                                className="h-10 w-auto object-contain"
-                                            />
-                                        ) : (
-                                            <Building2 className="h-6 w-6 text-slate-500" />
-                                        )}
-                                    </div>
-                                    <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:text-[var(--primary-blue)]" />
-                                </div>
-                                <h3 className="mt-4 text-xl font-semibold text-slate-900">{brand.name}</h3>
-                                {brand.description && (
-                                    <p className="mt-2 text-sm leading-6 text-slate-600">{brand.description}</p>
-                                )}
-                                {brand.countryOfOrigin && (
-                                    <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                                        {brand.countryOfOrigin}
-                                    </p>
+                                {brand.logoUrl ? (
+                                    <Image src={brand.logoUrl} alt={brand.name} fill className="object-contain p-3" sizes="150px" />
+                                ) : (
+                                    brand.name
                                 )}
                             </Link>
-                        ))
-                    ) : (
-                        <div className="rounded-[24px] border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-600 sm:col-span-2 xl:col-span-4">
-                            Производители появятся здесь после загрузки данных.
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {/* Преимущества */}
+            <section className="mt-4 border-y border-[var(--line)] bg-[var(--surface)]">
+                <div className="grid gap-8 px-7 py-12 [grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))]">
+                    {advantages.map(({ icon: Icon, title, description }) => (
+                        <div key={title} className="flex flex-col gap-2.5">
+                            <Icon className="h-7 w-7 text-[var(--primary-blue)]" strokeWidth={1.8} aria-hidden="true" />
+                            <h3 className="text-lg font-semibold">{title}</h3>
+                            <p className="m-0 leading-relaxed text-[#3D4757]">{description}</p>
                         </div>
-                    )}
-                </div>
-            </section>
-
-            <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
-                <div className="grid gap-4 md:grid-cols-3">
-                    {advantages.map((item) => {
-                        const Icon = item.icon;
-
-                        return (
-                            <article
-                                key={item.title}
-                                className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_16px_45px_rgba(15,23,42,0.06)] sm:p-6"
-                            >
-                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--primary-blue)] text-[var(--primary-yellow1)]">
-                                    <Icon className="h-5 w-5" />
-                                </div>
-                                <h2 className="mt-4 text-lg font-semibold text-slate-900">{item.title}</h2>
-                                <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
-                            </article>
-                        );
-                    })}
+                    ))}
                 </div>
             </section>
         </div>

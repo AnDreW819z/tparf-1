@@ -3,7 +3,7 @@
 
 import { useCartStore } from '@/shared/store/useCartStore';
 import { toast } from 'sonner';
-import { X } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { useTransition } from 'react';
 
 interface CartItemDeleteButtonProps {
@@ -28,22 +28,13 @@ export function CartItemDeleteButton({ productId, token }: CartItemDeleteButtonP
 
     return (
         <button
-            className="
-                absolute top-1.5 right-1.5 h-7 w-7 p-0 flex items-center justify-center
-                bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm
-                hover:bg-red-50 hover:border-red-200 hover:text-red-600
-                hover:shadow-md hover:scale-105 active:scale-95
-                opacity-0 group-hover:opacity-100 lg:opacity-100 lg:group-hover:opacity-100
-                transition-all duration-200 ease-out
-                disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent
-                disabled:hover:border-gray-200 disabled:hover:text-gray-400
-                rounded-lg group
-            "
+            type="button"
+            className="flex h-10 w-10 flex-none items-center justify-center rounded text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40"
             onClick={handleDelete}
             disabled={isPending}
-            aria-label="Удалить товар"
+            aria-label="Удалить позицию"
         >
-            <X className="h-3.5 w-3.5 transition-all duration-200" />
+            <Trash2 className="h-[18px] w-[18px]" strokeWidth={1.8} />
         </button>
     );
 }

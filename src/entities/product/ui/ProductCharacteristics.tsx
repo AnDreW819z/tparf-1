@@ -119,30 +119,30 @@ export function ProductCharacteristics({
 
     const isAside = layout === 'aside';
     const sectionClassName = isAside
-        ? 'w-full max-w-full rounded-3xl border border-slate-200 bg-white p-5 text-slate-700 shadow-sm sm:p-6 lg:p-6'
-        : 'w-full max-w-full rounded-3xl border border-slate-200 bg-white p-5 text-slate-700 shadow-sm sm:p-6 lg:p-8';
+        ? 'w-full max-w-full rounded-md border border-[#e2e2e2] bg-white p-6'
+        : 'w-full max-w-full rounded-md border border-[#e2e2e2] bg-white p-8';
     const rowClassName = isAside
         ? 'grid grid-cols-1 gap-1 py-4 xl:grid-cols-[180px_1fr] xl:gap-4'
         : 'grid grid-cols-1 gap-1 py-4 xl:grid-cols-[180px_1fr] xl:gap-4';
 
     return (
         <section className={sectionClassName}>
-            <h2 className="text-2xl font-bold text-slate-950">{title}</h2>
-            <dl className="mt-6 divide-y divide-slate-100">
+            <h2 className="heading-1 text-xl">{title}</h2>
+            <dl className="mt-6 divide-y divide-[var(--gray-bg)]">
                 {normalizedItems.map((item) => {
                     const displayValue = item.unit ? `${item.value} ${item.unit}` : item.value;
                     const isUrl = isSafeUrl(item.value);
 
                     return (
                         <div key={item.id} className={rowClassName}>
-                            <dt className="min-w-0 break-words text-sm text-slate-500">{item.name}</dt>
-                            <dd className="min-w-0 break-words text-sm leading-7 text-slate-700 [overflow-wrap:anywhere]">
+                            <dt className="min-w-0 break-words text-sm text-[#888]">{item.name}</dt>
+                            <dd className="min-w-0 break-words text-sm leading-7 text-[#1a1a1a] [overflow-wrap:anywhere]">
                                 {isUrl ? (
                                     <a
                                         href={item.value}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="break-all text-blue-700 hover:underline"
+                                        className="break-all text-[var(--blue-accent)] hover:text-[var(--primary-blue)]"
                                     >
                                         {item.value}
                                     </a>

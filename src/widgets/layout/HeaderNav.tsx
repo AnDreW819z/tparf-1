@@ -8,25 +8,33 @@ export default function HeaderNav() {
     const pathname = usePathname();
 
     return (
-        <div className="flex justify-between items-center mb-6">
-            <nav className="flex gap-8">
+        <div
+            className="mb-8 flex items-center gap-8"
+            style={{ borderBottom: '1px solid var(--line)', paddingBottom: 16 }}
+        >
+            <nav className="flex items-center gap-8">
                 <Link
                     href="/cart"
-                    className={`text-2xl font-semibold hover:underline transition-colors ${
-                        pathname === '/cart' ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600'
-                    }`}
+                    className="text-lg font-semibold transition-colors"
+                    style={{
+                        fontFamily: 'var(--font-display)',
+                        color: pathname === '/cart' ? 'var(--ink)' : 'var(--muted)',
+                    }}
                 >
                     Корзина
                 </Link>
                 <Link
                     href="/orders"
-                    className={`text-2xl font-semibold hover:underline transition-colors ${
-                        pathname === '/orders' ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600'
-                    }`}
+                    className="text-lg font-semibold transition-colors"
+                    style={{
+                        fontFamily: 'var(--font-display)',
+                        color: pathname === '/orders' ? 'var(--ink)' : 'var(--muted)',
+                    }}
                 >
                     Заказы
                 </Link>
             </nav>
+            <div className="flex-1" />
             <LogoutButton />
         </div>
     );

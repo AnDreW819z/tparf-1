@@ -6,9 +6,10 @@ import { useMemo, useState } from 'react';
 
 interface HeaderSearchProps {
     compact?: boolean;
+    onSubmitted?: () => void;
 }
 
-export function HeaderSearch({ compact = false }: HeaderSearchProps) {
+export function HeaderSearch({ compact = false, onSubmitted }: HeaderSearchProps) {
     const router = useRouter();
     const [query, setQuery] = useState('');
 
@@ -20,10 +21,11 @@ export function HeaderSearch({ compact = false }: HeaderSearchProps) {
         }
 
         router.push(`/search?SearchQuery=${encodeURIComponent(normalizedQuery)}`);
+        onSubmitted?.();
     }
 
     const inputClass = compact
-        ? 'h-9 rounded-full border-white/10 bg-white px-9 pr-10 text-sm text-slate-900 focus:border-[var(--primary-yellow1)] focus:ring-2 focus:ring-[rgba(221,213,33,0.2)]'
+        ? 'h-10 rounded border-[#cfcfcf] bg-white px-9 pr-10 text-sm text-slate-900 focus:border-[var(--blue-accent)] focus:ring-2 focus:ring-[rgba(29,83,147,0.2)]'
         : 'h-10 rounded-full border-white/12 bg-white px-9 pr-10 text-sm text-slate-900 focus:border-white focus:ring-2 focus:ring-white/20';
 
     return (

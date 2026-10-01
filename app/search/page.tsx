@@ -39,15 +39,15 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         })) ?? [];
 
     return (
-        <section className="mx-auto max-w-7xl px-4 py-8">
-            <h1 className="mb-2 text-2xl font-semibold">Результаты поиска</h1>
+        <section className="px-7 pb-20 pt-10">
+            <h1 className="heading-1 mb-2.5 text-[28px]">Результаты поиска</h1>
 
             {searchQuery ? (
-                <p className="mb-6 text-sm text-gray-500">
+                <p className="mb-8 text-[14.5px] text-[#888]">
                     По запросу «{searchQuery}» найдено {productsData?.totalCount ?? 0} товаров
                 </p>
             ) : (
-                <p className="mb-6 text-sm text-gray-500">
+                <p className="mb-8 text-[14.5px] text-[#888]">
                     Введите название товара в строку поиска.
                 </p>
             )}
@@ -66,7 +66,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             )}
 
             {searchQuery && productItems.length === 0 && (
-                <div className="rounded-lg border border-gray-200 bg-white px-6 py-12 text-center text-gray-500">
+                <div
+                    className="rounded-md border border-dashed border-[#cfcfcf] px-6 py-16 text-center text-[15px] text-[#777]"
+                    style={{ background: 'var(--gray-bg)' }}
+                >
                     Ничего не найдено. Попробуйте изменить запрос.
                 </div>
             )}

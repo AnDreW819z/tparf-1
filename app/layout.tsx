@@ -20,9 +20,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     return (
         <html lang="ru">
             <body>
-                <ClientRoot>
+                <ClientRoot token={user?.token ?? null}>
                     <Header user={user} />
-                    <main className="min-h-[70vh] overflow-x-hidden">{children}</main>
+                    <main className="page-sheet">{children}</main>
                     <Footer />
                 </ClientRoot>
             </body>

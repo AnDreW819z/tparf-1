@@ -29,39 +29,26 @@ export function ProductCard({
     const to = hrefName ?? `/product/${id}`;
 
     return (
-        <div
-            className={clsx(
-                // базовое состояние
-                'rounded border border-[#DDDDDD] bg-white text-[#767676]',
-                'p-4',
-                // hover-эффект: немного увеличить и добавить тень
-                'transition-transform transition-shadow duration-200 ease-out hover:scale-[1.02] hover:shadow-md',
-                className
-            )}
-        >
-            <Link href={to} aria-label={name}>
-                <div className="aspect-square relative mb-3 overflow-hidden rounded">
-                    <ImageWithFallback
-                        src={imageUrl}
-                        alt={name}
-                        fill
-                        className="object-contain"
-                        sizes="(min-width:1280px) 25vw, (min-width:1024px) 33vw, 50vw"
-                    />
-                </div>
+        <article className={clsx('flex flex-col gap-2', className)}>
+            <Link href={to} aria-label={name} className="relative mb-1 block aspect-square overflow-hidden rounded bg-[var(--surface)]">
+                <ImageWithFallback
+                    src={imageUrl}
+                    alt={name}
+                    fill
+                    className="object-contain p-3"
+                    sizes="(min-width:1280px) 25vw, (min-width:1024px) 33vw, 50vw"
+                />
             </Link>
 
-            {brandName && <div className="text-sm text-[#767676] mb-1">{brandName}</div>}
-
-            <h3 className="font-medium mb-2 leading-snug line-clamp-2">
-                <Link href={to} className="hover:underline">
-                    {name}
-                </Link>
+            <h3 className="m-0 line-clamp-2 text-[15px] font-medium leading-snug text-[var(--ink)]">
+                <Link href={to} className="text-inherit hover:text-[var(--primary-blue)]">{name}</Link>
             </h3>
 
-            <div className="text-black font-semibold">
+            {brandName && <div className="text-[13px] text-[var(--muted)]">{brandName}</div>}
+
+            <div className="mt-auto text-lg font-semibold text-[var(--ink)]">
                 {formatProductPrice(price, currencyCode)}
             </div>
-        </div>
+        </article>
     );
 }

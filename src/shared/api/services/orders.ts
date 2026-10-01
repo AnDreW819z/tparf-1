@@ -70,3 +70,10 @@ export async function createOneClickOrder(token: string, items: OneClickOrderIte
     });
     return data;
 }
+/** Отмена своего заказа покупателем (бэкенд разрешает только статусы «Новый» и «В обработке») */
+export async function cancelOrder(token: string, orderId: string): Promise<Order> {
+    const { data } = await api.delete<Order>(`orders/${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    return data;
+}

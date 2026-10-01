@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Pencil } from 'lucide-react';
+import { ImageIcon, Minus, Plus } from 'lucide-react';
 import { QuickQuantityModal } from '@/entities/cart/ui/QuickQuantityModal';
 import { formatProductPrice, isRequestPrice } from '@/shared/lib/price';
 import { useCartStore, type CartItemType } from '@/shared/store/useCartStore';
@@ -63,64 +63,71 @@ export default function CartItem({ item, token }: Props) {
         ? 'по запросу'
         : formatProductPrice(item.unitPrice * quantity, item.currencyCode);
 
+    const stepBtn =
+        'flex h-[42px] w-11 items-center justify-center text-[var(--ink)] transition-colors hover:text-[var(--primary-blue)] disabled:cursor-not-allowed disabled:opacity-50';
+
     return (
-        <div className="group relative flex gap-4 rounded border border-[#DDDDDD] bg-white p-4">
-            <CartItemDeleteButton productId={item.productId} token={token} />
-
-            {mainImageUrl && (
-                <Image
-                    src={mainImageUrl}
-                    alt={item.productName}
-                    width={100}
-                    height={100}
-                    className="h-24 w-24 rounded object-cover"
-                />
-            )}
-
-            <div className="flex-1">
-                <div className="font-medium text-blue-600 hover:underline">
-                    <Link href={`/product/${item.productId}`}>{item.productName}</Link>
-                </div>
-                <div className="mt-1 text-sm text-gray-500">
-                    Артикул: {item.productId} · {item.brandName ?? ''}
-                </div>
-                <div className="mt-1 text-sm text-gray-500">
-                    Цена за ед.: {formatProductPrice(item.unitPrice, item.currencyCode)}
-                </div>
-                <div className="mt-2 flex items-center justify-between text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                        <span>Количество:</span>
-                        <div className="flex items-center gap-1">
-                            <button
-                                onClick={() => void handleQuantityChange(quantity - 1)}
-                                className="flex h-8 w-8 items-center justify-center rounded border px-2 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-                                disabled={loading}
-                            >
-                                -
-                            </button>
-                            <span className="w-10 rounded bg-gray-100 px-2 py-1 text-center font-medium">
-                                {quantity}
-                            </span>
-                            <button
-                                onClick={() => void handleQuantityChange(quantity + 1)}
-                                className="flex h-8 w-8 items-center justify-center rounded border px-2 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-                                disabled={loading}
-                            >
-                                +
-                            </button>
-                            <button
-                                onClick={() => setShowQuickModal(true)}
-                                className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 p-1.5 transition-all hover:border-blue-300 hover:bg-blue-50 hover:shadow-sm disabled:opacity-50"
-                                disabled={loading}
-                                title="Быстрое количество"
-                            >
-                                <Pencil className="h-3.5 w-3.5 text-gray-500 transition-colors hover:text-blue-600" />
-                            </button>
-                        </div>
-                    </div>
-                    <span className="font-semibold text-gray-800">Итого: {totalLabel}</span>
+        <article className="flex flex-wrap items-center gap-x-4 gap-y-4 border-b border-[#EDF0F3] p-5 last:border-b-0">
+            <div className="flex min-w-0 flex-[1_1_220px] items-center gap-4">
+                <Link
+                    href={`/product/${item.productId}`}
+                    aria-label={item.productName}
+                    className="relative flex h-[72px] w-[72px] flex-none items-center justify-center overflow-hidden rounded bg-[#F0F3F7] text-[#8A95A5]"
+                >
+                    {mainImageUrl ? (
+                        <Image src={mainImageUrl} alt="" fill className="object-contain p-1.5" sizes="72px" />
+                    ) : (
+                        <ImageIcon className="h-6 w-6" aria-hidden="true" />
+                    )}
+                </Link>
+                <div className="flex min-w-0 flex-col gap-1">
+                    <Link href={`/product/${item.productId}`} className="font-semibold leading-snug text-[var(--ink)]">
+                        {item.productName}
+                    </Link>
+                    <span className="text-[13px] text-[var(--muted)]">
+                        {[item.brandName, isRequestItem ? 'цена по запросу' : `${formatProductPrice(item.unitPrice, item.currencyCode)} / шт.`]
+                            .filter(Boolean)
+                            .join(' · ')}
+                    </span>
                 </div>
             </div>
+
+            <div className="flex w-[132px] flex-none items-center">
+                <div role="group" aria-label="Количество" className="flex h-11 items-center rounded border border-[#C9D0D8]">
+                    <button
+                        type="button"
+                        onClick={() => void handleQuantityChange(quantity - 1)}
+                        className={stepBtn}
+                        disabled={loading}
+                        aria-label="Уменьшить количество"
+                    >
+                        <Minus className="h-4 w-4" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setShowQuickModal(true)}
+                        disabled={loading}
+                        className="min-w-8 text-center font-mono font-medium underline-offset-4 hover:underline"
+                        aria-label={`Количество: ${quantity}. Нажмите, чтобы ввести число`}
+                        title="Ввести количество"
+                    >
+                        {quantity}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => void handleQuantityChange(quantity + 1)}
+                        className={stepBtn}
+                        disabled={loading}
+                        aria-label="Увеличить количество"
+                    >
+                        <Plus className="h-4 w-4" />
+                    </button>
+                </div>
+            </div>
+
+            <span className="w-[110px] flex-none whitespace-nowrap text-right font-semibold">{totalLabel}</span>
+
+            <CartItemDeleteButton productId={item.productId} token={token} />
 
             <QuickQuantityModal
                 isOpen={showQuickModal}
@@ -129,6 +136,6 @@ export default function CartItem({ item, token }: Props) {
                 onQuantityChange={handleQuickQuantity}
                 loading={loading}
             />
-        </div>
+        </article>
     );
 }

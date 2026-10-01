@@ -77,7 +77,7 @@ export function formatDescriptionContent(content: string) {
         if (isDescriptionHeading(line)) {
             flushLists();
             nodes.push(
-                <h3 key={`heading-${nodes.length}`} className="pt-2 text-lg font-semibold text-slate-950">
+                <h3 key={`heading-${nodes.length}`} className="heading-2 pt-2 text-base">
                     {line.endsWith(':') ? line : `${line}:`}
                 </h3>,
             );
@@ -118,7 +118,7 @@ export function DescriptionContent({
     className?: string;
 }) {
     return (
-        <div className={`w-full max-w-[78ch] space-y-4 text-slate-700 ${className}`}>
+        <div className={`w-full max-w-[78ch] space-y-4 text-[#333] ${className}`}>
             {formatDescriptionContent(content)}
         </div>
     );

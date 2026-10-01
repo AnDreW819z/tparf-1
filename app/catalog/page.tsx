@@ -1,22 +1,25 @@
-// app/catalog/page.tsx
+import { CategoryOverviewGrid } from '@/entities/category/ui/CategoryOverviewGrid';
 import { fetchRootCategories } from '@/shared/api/services/categories';
-import { CategoryGrid } from '@/entities/category/ui/CategoryGrid';
 
 export const revalidate = 300;
 
 export default async function CatalogRootPage() {
     const roots = await fetchRootCategories();
-    const items = roots.map((cat) => ({
-        id: cat.id,
-        name: cat.name,
-        childrenCount: cat.children?.length ?? undefined,
-        imageUrl: cat.logoUrl ?? null, // добавлено
+    const items = roots.map((category) => ({
+        id: category.id,
+        name: category.name,
+        imageUrl: category.logoUrl ?? null,
+        children: (category.children ?? []).map((child) => ({ id: child.id, name: child.name })),
     }));
 
     return (
-        <section className="mx-auto max-w-7xl px-4 py-8">
-            <h1 className="text-2xl font-semibold mb-6">Каталог</h1>
-            <CategoryGrid items={items} parentLevel={0} />
+        <section className="px-7 pb-16 pt-7">
+            <h1 className="m-0 mb-8 text-[32px] font-semibold">Каталог</h1>
+            {items.length > 0 ? (
+                <CategoryOverviewGrid items={items} />
+            ) : (
+                <p className="text-[var(--muted)]">Категории пока не загружены.</p>
+            )}
         </section>
     );
 }

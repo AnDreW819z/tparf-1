@@ -236,7 +236,7 @@ function parsePairsToCharacteristics(content: string, current: NormalizedCharact
     return next;
 }
 
-function splitDirtyDescription(content: string) {
+function splitDirtyDescription(content: string): NormalizedDescriptionBlock[] {
     const cleaned = cleanText(content);
     if (!cleaned) {
         return [] as NormalizedDescriptionBlock[];
@@ -304,7 +304,7 @@ export function normalizeProductContent(input: NormalizeInput): NormalizedProduc
 
     let descriptions: NormalizedDescriptionBlock[] = hasStructuredDescriptions
         ? rawDescriptions
-              .map((block, index) => {
+              .map((block, index): NormalizedDescriptionBlock | null => {
                   const content = cleanText(block.content);
                   if (!content) {
                       return null;
