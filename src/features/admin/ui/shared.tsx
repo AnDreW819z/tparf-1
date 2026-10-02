@@ -140,6 +140,8 @@ export const emptyNewsForm: SaveNewsPayload = {
 	title: '',
 	content: '',
 	imageUrl: '',
+	buttonText: '',
+	buttonUrl: '',
 };
 
 export const emptyBulkEmailForm: BulkEmailPayload = {

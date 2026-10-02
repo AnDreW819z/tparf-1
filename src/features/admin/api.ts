@@ -104,6 +104,8 @@ export type NewsItem = {
 	title: string;
 	content: string;
 	imageUrl: string | null;
+	buttonText?: string | null;
+	buttonUrl?: string | null;
 	createdAt: string;
 };
 
@@ -274,6 +276,8 @@ export type SaveNewsPayload = {
 	title: string;
 	content: string;
 	imageUrl?: string | null;
+	buttonText?: string | null;
+	buttonUrl?: string | null;
 };
 
 export type BulkEmailPayload = {

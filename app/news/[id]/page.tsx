@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { fetchNewsById } from '@/shared/api/services/news';
+import { NewsButton } from '@/widgets/news/ui/NewsButton';
 
 export const revalidate = 300;
 
@@ -76,6 +77,8 @@ export default async function NewsDetailsPage({ params }: { params: Promise<{ id
                         <div className="max-w-none whitespace-pre-line break-words text-[15px] leading-[1.75] text-[#333]">
                             {newsItem.content}
                         </div>
+
+                        <NewsButton url={newsItem.buttonUrl} text={newsItem.buttonText} className="mt-7" />
                     </div>
                 </article>
             </div>

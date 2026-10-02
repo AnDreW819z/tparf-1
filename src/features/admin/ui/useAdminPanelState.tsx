@@ -721,10 +721,18 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 			return;
 		}
 
+		const buttonUrl = newsForm.buttonUrl?.trim() || null;
+		if (buttonUrl && !/^(\/(?!\/)|https?:\/\/)/i.test(buttonUrl)) {
+			setNotice({ type: 'error', text: 'Ссылка кнопки должна начинаться с / (страница сайта) или с https://' });
+			return;
+		}
+
 		const payload: SaveNewsPayload = {
 			title,
 			content,
 			imageUrl: newsForm.imageUrl?.trim() ? newsForm.imageUrl.trim() : null,
+			buttonUrl,
+			buttonText: buttonUrl ? newsForm.buttonText?.trim() || null : null,
 		};
 
 		await runAction(

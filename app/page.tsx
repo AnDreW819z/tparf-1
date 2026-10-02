@@ -7,6 +7,7 @@ import { fetchAllBrands } from '@/shared/api/services/brands';
 import { fetchRootCategories } from '@/shared/api/services/categories';
 import { fetchNews, type NewsItem } from '@/shared/api/services/news';
 import { getUserFromCookie } from '@/shared/server/auth';
+import { NewsButton } from '@/widgets/news/ui/NewsButton';
 
 export const revalidate = 300;
 
@@ -152,6 +153,7 @@ export default async function Home() {
                                     {leadNews.title}
                                 </Link>
                                 <p className="m-0 text-[15px] leading-relaxed text-[#3D4757]">{excerpt(leadNews.content)}</p>
+                                <NewsButton url={leadNews.buttonUrl} text={leadNews.buttonText} className="mt-1 self-start" />
                             </article>
                         ) : (
                             <div className="rounded-md border border-dashed border-[#C9D0D8] p-8 text-sm text-[var(--muted)]">
