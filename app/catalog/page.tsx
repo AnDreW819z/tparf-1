@@ -11,6 +11,8 @@ export default async function CatalogRootPage() {
         imageUrl: category.logoUrl ?? null,
         externalUrl: category.externalUrl ?? null,
         children: (category.children ?? []).map((child) => ({ id: child.id, name: child.name })),
+        childrenCount: category.children?.length ?? 0,
+        productCount: category.productCount,
     }));
 
     return (

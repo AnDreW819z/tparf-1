@@ -12,6 +12,8 @@ export type CategoryItem = {
     externalUrl?: string | null;
     path: string | null;
     level: number;
+    /** Товаров на сайте в категории вместе с подкатегориями. */
+    productCount?: number;
     children?: CategoryItem[];
 };
 
