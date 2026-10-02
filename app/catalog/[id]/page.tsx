@@ -1,6 +1,6 @@
 // app/catalog/[id]/page.tsx
 
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { fetchCategoryById } from '@/shared/api/services/categories';
 import { fetchProductsByCategoryId } from '@/shared/api/services/products';
 import { Breadcrumbs } from '@/widgets/breadcrumbs/ui/Breadcrumbs';
@@ -39,6 +39,9 @@ export default async function CategoryByIdPage({ params, searchParams }: Catalog
         throw e;
     }
 
+    // Категория-витрина другого сайта: своей страницы у неё нет — ведём на сайт.
+    if (node.externalUrl) redirect(node.externalUrl);
+
     const crumbs = node.pathItems.map((p) => ({ id: p.id, title: p.name }));
 
 
@@ -47,6 +50,7 @@ export default async function CategoryByIdPage({ params, searchParams }: Catalog
         name: child.name,
         childrenCount: child.children?.length ?? undefined,
         imageUrl: child.logoUrl ?? null, // добавлено
+        externalUrl: child.externalUrl ?? null,
     }));
 
     // Читаем пагинацию из URL

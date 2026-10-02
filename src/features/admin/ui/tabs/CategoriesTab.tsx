@@ -112,6 +112,7 @@ export function CategoriesTab() {
 										setCategoryForm({
 											name: category.name,
 											logoUrl: category.logoUrl ?? '',
+											externalUrl: category.externalUrl ?? '',
 											parentId: category.parentId ?? '',
 											sortOrder: category.sortOrder,
 											isActive: category.isActive,
@@ -200,6 +201,15 @@ export function CategoriesTab() {
 							/>
 						</Field>
 					</div>
+
+					<Field label="Внешняя ссылка" hint="Если заполнено — по клику на категорию откроется этот сайт в новой вкладке">
+						<input
+							className={fieldClass}
+							placeholder="https://…"
+							value={categoryForm.externalUrl ?? ''}
+							onChange={(event) => setCategoryForm((current) => ({ ...current, externalUrl: event.target.value }))}
+						/>
+					</Field>
 
 					<Check
 						label="Показывать на сайте"

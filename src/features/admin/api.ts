@@ -38,6 +38,8 @@ export type Category = {
 	id: string;
 	name: string;
 	logoUrl: string | null;
+	/** Внешняя ссылка: категория-витрина другого сайта. */
+	externalUrl?: string | null;
 	parentId: string | null;
 	path: string | null;
 	sortOrder: number;
@@ -217,6 +219,7 @@ export type SaveBrandPayload = {
 export type SaveCategoryPayload = {
 	name: string;
 	logoUrl?: string | null;
+	externalUrl?: string | null;
 	parentId?: string | null;
 	sortOrder: number;
 	isActive: boolean;

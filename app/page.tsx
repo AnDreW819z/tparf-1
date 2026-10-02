@@ -32,6 +32,7 @@ type HomeCategory = {
     id: string;
     name: string;
     imageUrl: string | null;
+    externalUrl: string | null;
     children: { id: string; name: string }[];
 };
 
@@ -73,6 +74,7 @@ export default async function Home() {
             id: category.id,
             name: category.name,
             imageUrl: category.logoUrl,
+            externalUrl: category.externalUrl ?? null,
             children: (category.children ?? []).slice(0, 4).map((child) => ({ id: child.id, name: child.name })),
         }));
     } catch (error) {

@@ -8,6 +8,8 @@ export type CategoryItem = {
     id: string;
     name: string;
     logoUrl: string | null;
+    /** Внешняя ссылка: категория ведёт на другой сайт. */
+    externalUrl?: string | null;
     path: string | null;
     level: number;
     children?: CategoryItem[];
@@ -17,6 +19,7 @@ export type CategoryNode = {
     id: string;
     name: string;
     logoUrl: string | null;
+    externalUrl?: string | null;
     parentId: string | null;
     path: string | null;
     sortOrder: number;

@@ -96,6 +96,7 @@ export const emptyBrandForm: SaveBrandPayload = {
 export const emptyCategoryForm: SaveCategoryPayload = {
 	name: '',
 	logoUrl: '',
+	externalUrl: '',
 	parentId: '',
 	sortOrder: 0,
 	isActive: true,
