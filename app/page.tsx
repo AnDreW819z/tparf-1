@@ -35,6 +35,8 @@ type HomeCategory = {
     imageUrl: string | null;
     externalUrl: string | null;
     children: { id: string; name: string }[];
+    childrenCount: number;
+    productCount?: number;
 };
 
 type HomeBrand = { id: string; name: string; logoUrl: string | null };
@@ -77,6 +79,8 @@ export default async function Home() {
             imageUrl: category.logoUrl,
             externalUrl: category.externalUrl ?? null,
             children: (category.children ?? []).slice(0, 4).map((child) => ({ id: child.id, name: child.name })),
+            childrenCount: category.children?.length ?? 0,
+            productCount: category.productCount,
         }));
     } catch (error) {
         console.error('Failed to load categories for home page', error);
@@ -101,78 +105,76 @@ export default async function Home() {
 
     return (
         <div>
-            {/* Представление агентства (по ТЗ: лого, название, слоган и текст вместо фото) */}
+            {/* О компании: одна строка — знак и название слева, описание справа за жёлтой чертой */}
             <section
                 aria-label="О компании"
-                className="flex flex-wrap items-center gap-x-10 gap-y-6 border-b border-[var(--line)] px-7 pb-8 pt-9"
+                className="flex flex-col gap-6 border-b border-[var(--line)] px-7 py-9 lg:flex-row lg:items-center lg:justify-between lg:gap-12"
             >
-                <div className="flex min-w-0 flex-[1_1_420px] flex-wrap items-center gap-5">
-                    <Image src="/Logo.png" alt="" width={173} height={76} className="h-[60px] w-auto flex-none sm:h-[76px]" priority />
-                    <div className="flex min-w-0 flex-col gap-1.5">
-                        <h1 className="text-[clamp(20px,5vw,26px)] font-bold uppercase leading-tight tracking-[0.02em] text-[var(--primary-blue)]">
-                            Торгово-промышленное агентство
-                        </h1>
-                        <span className="text-sm font-medium uppercase tracking-[0.06em] text-[var(--muted)]">
-                            В интересах бизнеса, во благо человечества
-                        </span>
-                    </div>
+                <div className="flex min-w-0 flex-col gap-3">
+                    <h1 className="m-0 text-[clamp(17px,4.4vw,28px)] font-bold uppercase leading-[1.12] tracking-[0.02em] text-[var(--primary-blue)]">
+                        <span className="block sm:whitespace-nowrap">Торгово-промышленное</span>
+                        <span className="block">агентство</span>
+                    </h1>
+                    <span className="text-[13px] font-medium uppercase tracking-[0.08em] text-[var(--muted)]">
+                        В интересах бизнеса, во благо человечества
+                    </span>
                 </div>
-                <p className="m-0 flex-[1_1_360px] border-l-[3px] border-[var(--gold)] pl-6 text-base leading-relaxed text-[#26303E]">
+
+                <p lang="ru" className="m-0 max-w-[460px] border-l-[3px] border-[var(--gold)] py-1 pl-5 sm:text-justify sm:hyphens-auto text-[17px] leading-relaxed text-[#26303E]">
                     Комплексное обеспечение предприятий на территории Российской Федерации и экспорт продукции на мировой рынок.
                 </p>
             </section>
 
-            {/* Новости: главная новость + информационный столбик (лента и контакты) */}
+            {/* Новости: главная новость во всю основную ширину + узкая лента сбоку. Контакты — в подвале. */}
             <section className="px-7 pb-6 pt-10">
                 <SectionTitle title="Новости и обновления" />
-                <div className="flex flex-wrap items-start gap-8">
-                    <div className="min-w-0 flex-[2_1_460px]">
-                        {leadNews ? (
-                            <article className="flex flex-col gap-3">
-                                <Link
-                                    href={`/news/${leadNews.id}`}
-                                    className="relative block aspect-video overflow-hidden rounded-md bg-[#F0F3F7]"
-                                    aria-label={leadNews.title}
-                                >
-                                    {leadNews.imageUrl ? (
-                                        <Image
-                                            src={leadNews.imageUrl}
-                                            alt=""
-                                            fill
-                                            className="object-cover"
-                                            sizes="(min-width:1024px) 640px, 100vw"
-                                        />
-                                    ) : (
-                                        <span className="flex h-full items-center justify-center text-[#8A95A5]">
-                                            <ImageIcon className="h-8 w-8" aria-hidden="true" />
-                                        </span>
-                                    )}
-                                </Link>
+                {leadNews ? (
+                    <div
+                        className={
+                            feed.length > 0
+                                ? 'grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-10'
+                                : 'block'
+                        }
+                    >
+                        <article
+                            className={
+                                feed.length > 0
+                                    ? 'flex min-w-0 flex-col gap-3'
+                                    : 'grid min-w-0 items-center gap-x-10 gap-y-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]'
+                            }
+                        >
+                            <Link
+                                href={`/news/${leadNews.id}`}
+                                className="relative block aspect-video overflow-hidden rounded-md bg-[#F0F3F7]"
+                                aria-label={leadNews.title}
+                            >
+                                {leadNews.imageUrl ? (
+                                    <Image
+                                        src={leadNews.imageUrl}
+                                        alt=""
+                                        fill
+                                        className="object-cover"
+                                        sizes={feed.length > 0 ? '(min-width:1024px) 820px, 100vw' : '(min-width:1024px) 640px, 100vw'}
+                                        priority
+                                    />
+                                ) : (
+                                    <span className="flex h-full items-center justify-center text-[#8A95A5]">
+                                        <ImageIcon className="h-8 w-8" aria-hidden="true" />
+                                    </span>
+                                )}
+                            </Link>
+                            <div className="flex min-w-0 flex-col gap-3">
                                 <span className="font-mono text-[13px] text-[var(--muted)]">{formatDate(leadNews.createdAt)}</span>
-                                <Link href={`/news/${leadNews.id}`} className="text-[22px] font-semibold leading-snug text-[var(--ink)]">
+                                <Link href={`/news/${leadNews.id}`} className="text-[24px] font-semibold leading-snug text-[var(--ink)]">
                                     {leadNews.title}
                                 </Link>
-                                <p className="m-0 text-[15px] leading-relaxed text-[#3D4757]">{excerpt(leadNews.content)}</p>
+                                <p className="m-0 text-[15px] leading-relaxed text-[#3D4757]">{excerpt(leadNews.content, 260)}</p>
                                 <NewsButton url={leadNews.buttonUrl} text={leadNews.buttonText} className="mt-1 self-start" />
-                            </article>
-                        ) : (
-                            <div className="rounded-md border border-dashed border-[#C9D0D8] p-8 text-sm text-[var(--muted)]">
-                                Новости ещё не добавлены.
-                                {canManageNews && (
-                                    <>
-                                        {' '}
-                                        <Link href="/admin" className="font-semibold">
-                                            Добавить в админ-панели
-                                        </Link>
-                                    </>
-                                )}
                             </div>
-                        )}
-                    </div>
+                        </article>
 
-                    <aside className="flex min-w-0 flex-[1_1_280px] flex-col gap-6">
                         {feed.length > 0 && (
-                            <div className="flex flex-col">
+                            <aside aria-label="Другие новости" className="flex min-w-0 flex-col">
                                 <span className="border-b-2 border-[var(--primary-blue)] pb-2.5 text-xs font-semibold uppercase tracking-[0.06em] text-[var(--muted)]">
                                     Лента
                                 </span>
@@ -180,24 +182,37 @@ export default async function Home() {
                                     <Link
                                         key={item.id}
                                         href={`/news/${item.id}`}
-                                        className="flex flex-col gap-1 border-b border-[#EDF0F3] py-3.5 text-[var(--ink)]"
+                                        className="group flex items-start gap-3 border-b border-[#EDF0F3] py-3.5 text-[var(--ink)]"
                                     >
-                                        <span className="font-mono text-xs text-[var(--muted)]">{formatDate(item.createdAt)}</span>
-                                        <span className="text-[15px] font-medium leading-snug">{item.title}</span>
+                                        {item.imageUrl && (
+                                            <span className="relative mt-0.5 block h-[42px] w-[64px] flex-none overflow-hidden rounded bg-[#F0F3F7]">
+                                                <Image src={item.imageUrl} alt="" fill className="object-cover" sizes="64px" />
+                                            </span>
+                                        )}
+                                        <span className="flex min-w-0 flex-col gap-1">
+                                            <span className="font-mono text-xs text-[var(--muted)]">{formatDate(item.createdAt)}</span>
+                                            <span className="text-[15px] font-medium leading-snug group-hover:text-[var(--primary-blue)]">
+                                                {item.title}
+                                            </span>
+                                        </span>
                                     </Link>
                                 ))}
-                            </div>
+                            </aside>
                         )}
-
-                        <div className="flex flex-col gap-2 rounded-md bg-[var(--surface)] p-5 text-sm">
-                            <span className="mb-1 text-xs font-semibold uppercase tracking-[0.06em] text-[var(--muted)]">Контакты</span>
-                            <a href="tel:+79607957523" className="text-base font-semibold text-[var(--ink)]">+7 (960) 795-75-23</a>
-                            <a href="tel:+79618722751" className="text-base font-semibold text-[var(--ink)]">+7 (961) 872-27-51</a>
-                            <a href="mailto:tpa@tparf.ru">tpa@tparf.ru</a>
-                            <span className="text-[#3D4757]">630132, г. Новосибирск, ул. Нарымская, д. 9</span>
-                        </div>
-                    </aside>
-                </div>
+                    </div>
+                ) : (
+                    <div className="rounded-md border border-dashed border-[#C9D0D8] p-8 text-sm text-[var(--muted)]">
+                        Новости ещё не добавлены.
+                        {canManageNews && (
+                            <>
+                                {' '}
+                                <Link href="/admin" className="font-semibold">
+                                    Добавить в админ-панели
+                                </Link>
+                            </>
+                        )}
+                    </div>
+                )}
             </section>
 
             {/* Каталог */}
