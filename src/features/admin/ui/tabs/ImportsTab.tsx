@@ -12,6 +12,7 @@ const vendorNames: Record<string, string> = {
 	antitok: 'АнтиТок',
 	hitek: 'HITEK',
 	kedr: 'КЕДР',
+	magnetplus: 'МАГНИТ Плюс',
 	opteltreco: 'Оптэлтреко',
 	argut: 'Аргут',
 	vsesvetodiodi: 'Все светодиоды',
