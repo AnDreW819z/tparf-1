@@ -8,6 +8,7 @@ import { fetchRootCategories } from '@/shared/api/services/categories';
 import { fetchNews, type NewsItem } from '@/shared/api/services/news';
 import { getUserFromCookie } from '@/shared/server/auth';
 import { NewsButton } from '@/widgets/news/ui/NewsButton';
+import { NewsFeedSlider } from '@/widgets/news/ui/NewsFeedSlider';
 
 export const revalidate = 300;
 
@@ -96,7 +97,7 @@ export default async function Home() {
     }
 
     try {
-        news = (await fetchNews()).slice(0, 5);
+        news = (await fetchNews()).slice(0, 9);
     } catch (error) {
         console.error('Failed to load news for home page', error);
     }
@@ -125,27 +126,15 @@ export default async function Home() {
                 </p>
             </section>
 
-            {/* Новости: главная новость во всю основную ширину + узкая лента сбоку. Контакты — в подвале. */}
+            {/* Новости: главная новость на всю ширину, под ней слайдер с остальными. Контакты — в подвале. */}
             <section className="px-7 pb-6 pt-10">
                 <SectionTitle title="Новости и обновления" />
                 {leadNews ? (
-                    <div
-                        className={
-                            feed.length > 0
-                                ? 'grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-10'
-                                : 'block'
-                        }
-                    >
-                        <article
-                            className={
-                                feed.length > 0
-                                    ? 'flex min-w-0 flex-col gap-3'
-                                    : 'grid min-w-0 items-center gap-x-10 gap-y-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]'
-                            }
-                        >
+                    <>
+                        <article className="grid min-w-0 items-center gap-x-10 gap-y-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
                             <Link
                                 href={`/news/${leadNews.id}`}
-                                className="relative block aspect-video overflow-hidden rounded-md bg-[#F0F3F7]"
+                                className="relative block aspect-video overflow-hidden rounded-lg bg-[#F0F3F7]"
                                 aria-label={leadNews.title}
                             >
                                 {leadNews.imageUrl ? (
@@ -154,7 +143,7 @@ export default async function Home() {
                                         alt=""
                                         fill
                                         className="object-cover"
-                                        sizes={feed.length > 0 ? '(min-width:1024px) 820px, 100vw' : '(min-width:1024px) 640px, 100vw'}
+                                        sizes="(min-width:1024px) 640px, 100vw"
                                         priority
                                     />
                                 ) : (
@@ -165,41 +154,23 @@ export default async function Home() {
                             </Link>
                             <div className="flex min-w-0 flex-col gap-3">
                                 <span className="font-mono text-[13px] text-[var(--muted)]">{formatDate(leadNews.createdAt)}</span>
-                                <Link href={`/news/${leadNews.id}`} className="text-[24px] font-semibold leading-snug text-[var(--ink)]">
+                                <Link href={`/news/${leadNews.id}`} className="text-[26px] font-semibold leading-snug text-[var(--ink)]">
                                     {leadNews.title}
                                 </Link>
-                                <p className="m-0 text-[15px] leading-relaxed text-[#3D4757]">{excerpt(leadNews.content, 260)}</p>
+                                <p className="m-0 text-[15px] leading-relaxed text-[#3D4757]">{excerpt(leadNews.content, 300)}</p>
                                 <NewsButton url={leadNews.buttonUrl} text={leadNews.buttonText} className="mt-1 self-start" />
                             </div>
                         </article>
 
-                        {feed.length > 0 && (
-                            <aside aria-label="Другие новости" className="flex min-w-0 flex-col">
-                                <span className="border-b-2 border-[var(--primary-blue)] pb-2.5 text-xs font-semibold uppercase tracking-[0.06em] text-[var(--muted)]">
-                                    Лента
-                                </span>
-                                {feed.map((item) => (
-                                    <Link
-                                        key={item.id}
-                                        href={`/news/${item.id}`}
-                                        className="group flex items-start gap-3 border-b border-[#EDF0F3] py-3.5 text-[var(--ink)]"
-                                    >
-                                        {item.imageUrl && (
-                                            <span className="relative mt-0.5 block h-[42px] w-[64px] flex-none overflow-hidden rounded bg-[#F0F3F7]">
-                                                <Image src={item.imageUrl} alt="" fill className="object-cover" sizes="64px" />
-                                            </span>
-                                        )}
-                                        <span className="flex min-w-0 flex-col gap-1">
-                                            <span className="font-mono text-xs text-[var(--muted)]">{formatDate(item.createdAt)}</span>
-                                            <span className="text-[15px] font-medium leading-snug group-hover:text-[var(--primary-blue)]">
-                                                {item.title}
-                                            </span>
-                                        </span>
-                                    </Link>
-                                ))}
-                            </aside>
-                        )}
-                    </div>
+                        <NewsFeedSlider
+                            items={feed.map((item) => ({
+                                id: item.id,
+                                title: item.title,
+                                imageUrl: item.imageUrl,
+                                date: formatDate(item.createdAt),
+                            }))}
+                        />
+                    </>
                 ) : (
                     <div className="rounded-md border border-dashed border-[#C9D0D8] p-8 text-sm text-[var(--muted)]">
                         Новости ещё не добавлены.
