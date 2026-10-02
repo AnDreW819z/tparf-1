@@ -126,12 +126,12 @@ export default async function Home() {
                 </p>
             </section>
 
-            {/* Новости: главная новость на всю ширину, под ней слайдер с остальными. Контакты — в подвале. */}
+            {/* Новости: главная новость на всю ширину — картинка, под ней текст; ниже слайдер с остальными. Контакты — в подвале. */}
             <section className="px-7 pb-6 pt-10">
                 <SectionTitle title="Новости и обновления" />
                 {leadNews ? (
                     <>
-                        <article className="grid min-w-0 items-center gap-x-10 gap-y-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+                        <article className="flex min-w-0 flex-col gap-6">
                             <Link
                                 href={`/news/${leadNews.id}`}
                                 className="relative block aspect-video overflow-hidden rounded-lg bg-[#F0F3F7]"
@@ -143,7 +143,7 @@ export default async function Home() {
                                         alt=""
                                         fill
                                         className="object-cover"
-                                        sizes="(min-width:1024px) 640px, 100vw"
+                                        sizes="(min-width:1280px) 1100px, 100vw"
                                         priority
                                     />
                                 ) : (
@@ -154,10 +154,10 @@ export default async function Home() {
                             </Link>
                             <div className="flex min-w-0 flex-col gap-3">
                                 <span className="font-mono text-[13px] text-[var(--muted)]">{formatDate(leadNews.createdAt)}</span>
-                                <Link href={`/news/${leadNews.id}`} className="text-[26px] font-semibold leading-snug text-[var(--ink)]">
+                                <Link href={`/news/${leadNews.id}`} className="text-[28px] font-semibold leading-snug text-[var(--ink)]">
                                     {leadNews.title}
                                 </Link>
-                                <p className="m-0 text-[15px] leading-relaxed text-[#3D4757]">{excerpt(leadNews.content, 300)}</p>
+                                <p className="m-0 text-[15px] leading-relaxed text-[#3D4757]">{excerpt(leadNews.content, 600)}</p>
                                 <NewsButton url={leadNews.buttonUrl} text={leadNews.buttonText} className="mt-1 self-start" />
                             </div>
                         </article>
