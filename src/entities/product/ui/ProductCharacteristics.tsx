@@ -1,7 +1,14 @@
 'use client';
 
 import type { ProductCharacteristic as ProductCharacteristicItem } from '@/shared/api/services/product';
-import { CollapsibleCard } from './CollapsibleCard';
+import { useState } from 'react';
+import { CollapsibleCard, ExpandToggle } from './CollapsibleCard';
+
+/** Общая разметка строки «название — значение» для всех технических блоков. */
+export const CHAR_ROW = 'grid grid-cols-1 gap-1 py-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4';
+export const CHAR_NAME = 'min-w-0 break-words text-[15px] leading-6 text-[var(--muted)]';
+export const CHAR_VALUE = 'min-w-0 break-words text-[15px] leading-6 text-[#1a1a1a] [overflow-wrap:anywhere]';
+const VISIBLE_ROWS = 10;
 
 export function isSafeUrl(value: string) {
     try {
@@ -110,6 +117,7 @@ export function ProductCharacteristics({
     title?: string;
     layout?: 'full' | 'aside';
 }) {
+    const [showAll, setShowAll] = useState(false);
     const normalizedItems = dedupeCharacteristics(
         items?.length ? items : normalizeFallbackCharacteristics(data ?? {}),
     );
@@ -118,19 +126,19 @@ export function ProductCharacteristics({
         return null;
     }
 
-    const rowClassName = 'grid grid-cols-1 gap-1 py-4 xl:grid-cols-[180px_1fr] xl:gap-4';
+    const visibleItems = showAll ? normalizedItems : normalizedItems.slice(0, VISIBLE_ROWS);
 
     return (
-        <CollapsibleCard title={title} count={normalizedItems.length} compact={layout === 'aside'}>
-            <dl className="divide-y divide-[var(--gray-bg)]">
-                {normalizedItems.map((item) => {
+        <CollapsibleCard title={title} count={normalizedItems.length} defaultOpen compact={layout === 'aside'}>
+            <dl className="divide-y divide-[var(--line)]">
+                {visibleItems.map((item) => {
                     const displayValue = item.unit ? `${item.value} ${item.unit}` : item.value;
                     const isUrl = isSafeUrl(item.value);
 
                     return (
-                        <div key={item.id} className={rowClassName}>
-                            <dt className="min-w-0 break-words text-sm text-[#888]">{item.name}</dt>
-                            <dd className="min-w-0 break-words text-sm leading-7 text-[#1a1a1a] [overflow-wrap:anywhere]">
+                        <div key={item.id} className={CHAR_ROW}>
+                            <dt className={CHAR_NAME}>{item.name}</dt>
+                            <dd className={CHAR_VALUE}>
                                 {isUrl ? (
                                     <a
                                         href={item.value}
@@ -148,6 +156,13 @@ export function ProductCharacteristics({
                     );
                 })}
             </dl>
+            {normalizedItems.length > VISIBLE_ROWS && (
+                <ExpandToggle
+                    expanded={showAll}
+                    onToggle={() => setShowAll((value) => !value)}
+                    moreLabel={`Показать все ${normalizedItems.length}`}
+                />
+            )}
         </CollapsibleCard>
     );
 }

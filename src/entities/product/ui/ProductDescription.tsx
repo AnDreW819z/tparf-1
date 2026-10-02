@@ -19,6 +19,58 @@ function isDescriptionHeading(line: string) {
     return normalized === 'ключевые характеристики' || normalized.startsWith('преимущества');
 }
 
+/** «Многофункциональность: текст» → название пункта жирным. */
+function BulletText({ text }: { text: string }) {
+    const match = text.match(/^([^:.!?]{2,48}):\s+(.+)$/);
+    if (!match) return <>{text}</>;
+    return (
+        <>
+            <b className="font-semibold text-[#1a1a1a]">{match[1]}:</b> {match[2]}
+        </>
+    );
+}
+
+const INLINE_HEADING = /^(.*?)\s*((?:Ключевые характеристики|Преимущества[^:•]{0,40}|Особенности[^:•]{0,40}):)\s*$/i;
+
+/**
+ * В фидах поставщиков список часто приходит одной строкой: «Текст. Ключевые характеристики: • Пункт • Пункт».
+ * Разбиваем такую строку на абзац, подзаголовок и отдельные пункты.
+ */
+function splitInlineBullets(lines: string[]) {
+    const result: string[] = [];
+    for (const line of lines) {
+        const parts = line.split(/\s*•\s*/);
+        if (parts.length < 3 && !(parts.length === 2 && parts[0].trim() === '')) {
+            result.push(line);
+            continue;
+        }
+
+        const [lead, ...items] = parts;
+        const heading = lead.match(INLINE_HEADING);
+        if (heading) {
+            if (heading[1].trim()) result.push(heading[1].trim(), '');
+            result.push(heading[2].trim());
+        } else if (lead.trim()) {
+            result.push(lead.trim());
+        }
+        const cleanItems = items.map((item) => item.trim()).filter(Boolean);
+        // После последнего пункта обычно продолжается обычный текст — отделяем его абзацем.
+        let tail = '';
+        const last = cleanItems.at(-1);
+        if (last) {
+            const boundary = last.search(/[.!?]\s+(?=[А-ЯЁA-Z])/);
+            if (boundary > 0) {
+                cleanItems[cleanItems.length - 1] = last.slice(0, boundary + 1);
+                tail = last.slice(boundary + 1).trim();
+            }
+        }
+        for (const item of cleanItems) result.push(`• ${item}`);
+        result.push('');
+        if (tail) result.push(tail, '');
+    }
+    return result;
+}
+
 export function formatDescriptionContent(content: string) {
     const nodes: ReactNode[] = [];
     let bulletItems: string[] = [];
@@ -32,10 +84,10 @@ export function formatDescriptionContent(content: string) {
         const items = bulletItems;
         bulletItems = [];
         nodes.push(
-            <ul key={`bullet-list-${nodes.length}`} className="list-disc space-y-2 pl-5 text-base leading-8">
+            <ul key={`bullet-list-${nodes.length}`} className="list-disc space-y-2 pl-5 text-[15px] leading-7 marker:text-[var(--muted)]">
                 {items.map((item, index) => (
                     <li key={`${item}-${index}`} className="break-words">
-                        {item}
+                        <BulletText text={item} />
                     </li>
                 ))}
             </ul>,
@@ -50,7 +102,7 @@ export function formatDescriptionContent(content: string) {
         const items = numberedItems;
         numberedItems = [];
         nodes.push(
-            <ol key={`numbered-list-${nodes.length}`} className="list-decimal space-y-2 pl-5 text-base leading-8">
+            <ol key={`numbered-list-${nodes.length}`} className="list-decimal space-y-2 pl-5 text-[15px] leading-7 marker:text-[var(--muted)]">
                 {items.map((item, index) => (
                     <li key={`${item}-${index}`} className="break-words">
                         {item}
@@ -65,7 +117,7 @@ export function formatDescriptionContent(content: string) {
         flushNumbered();
     };
 
-    const lines = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    const lines = splitInlineBullets(content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n'));
 
     for (const rawLine of lines) {
         const line = rawLine.trim();
@@ -77,7 +129,7 @@ export function formatDescriptionContent(content: string) {
         if (isDescriptionHeading(line)) {
             flushLists();
             nodes.push(
-                <h3 key={`heading-${nodes.length}`} className="heading-2 pt-2 text-base">
+                <h3 key={`heading-${nodes.length}`} className="heading-2 m-0 pt-1 text-[15px]">
                     {line.endsWith(':') ? line : `${line}:`}
                 </h3>,
             );
@@ -100,7 +152,7 @@ export function formatDescriptionContent(content: string) {
 
         flushLists();
         nodes.push(
-            <p key={`paragraph-${nodes.length}`} className="break-words whitespace-pre-line text-base leading-8">
+            <p key={`paragraph-${nodes.length}`} className="break-words whitespace-pre-line text-[15px] leading-7">
                 {line}
             </p>,
         );

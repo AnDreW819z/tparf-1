@@ -21,7 +21,7 @@ export function CategoryOverviewGrid({ items }: { items: CategoryOverviewItem[] 
                         aria-label={category.name}
                     >
                         {category.imageUrl ? (
-                            <Image src={category.imageUrl} alt="" fill className="object-contain p-2" sizes="88px" />
+                            <Image src={category.imageUrl} alt="" fill className="photo-blend object-contain p-2" sizes="88px" />
                         ) : (
                             <ImageIcon className="h-7 w-7" aria-hidden="true" />
                         )}

@@ -21,7 +21,7 @@ export function CategoryCardCompact({ id, name, href, imageUrl, className }: Cat
             title={name}
         >
             <div className="placeholder-media relative h-12 w-12 shrink-0 overflow-hidden rounded">
-                <Image src={src} alt={name} fill className="object-contain" sizes="48px" />
+                <Image src={src} alt={name} fill className="photo-blend object-contain" sizes="48px" />
             </div>
             <span className="line-clamp-2 text-sm text-[#1a1a1a]">{name}</span>
         </Link>

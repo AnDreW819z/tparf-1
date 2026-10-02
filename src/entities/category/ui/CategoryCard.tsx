@@ -22,7 +22,7 @@ export function CategoryCard({ id, name, href, subtitle, imageUrl, className }: 
                     src={src}
                     alt={name}
                     fill
-                    className="object-contain"
+                    className="photo-blend object-contain"
                     sizes="(min-width:1280px) 25vw, (min-width:1024px) 33vw, 50vw"
                 />
             </div>

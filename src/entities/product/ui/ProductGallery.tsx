@@ -56,7 +56,7 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
                         src={activeImage?.imageUrl}
                         alt={alt}
                         fill
-                        className="max-w-full object-contain p-3"
+                        className="photo-blend max-w-full object-contain p-3"
                         sizes="(min-width:1024px) 50vw, 100vw"
                     />
 
@@ -125,7 +125,7 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
                                     src={image.imageUrl}
                                     alt={alt}
                                     fill
-                                    className="max-w-full object-contain p-1"
+                                    className="photo-blend max-w-full object-contain p-1"
                                     sizes="80px"
                                 />
                             </button>

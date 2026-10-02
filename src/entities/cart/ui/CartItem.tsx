@@ -75,7 +75,7 @@ export default function CartItem({ item, token }: Props) {
                     className="relative flex h-[72px] w-[72px] flex-none items-center justify-center overflow-hidden rounded bg-[#F0F3F7] text-[#8A95A5]"
                 >
                     {mainImageUrl ? (
-                        <Image src={mainImageUrl} alt="" fill className="object-contain p-1.5" sizes="72px" />
+                        <Image src={mainImageUrl} alt="" fill className="photo-blend object-contain p-1.5" sizes="72px" />
                     ) : (
                         <ImageIcon className="h-6 w-6" aria-hidden="true" />
                     )}

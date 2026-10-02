@@ -1,14 +1,13 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type {
     ProductCharacteristic as ProductCharacteristicItem,
     ProductDescription,
 } from '@/shared/api/services/product';
-import { CollapsibleCard } from './CollapsibleCard';
+import { ClampedBody, CollapsibleCard } from './CollapsibleCard';
 import { DescriptionContent } from './ProductDescription';
-import { isPublicCharacteristicVisible, ProductCharacteristics } from './ProductCharacteristics';
+import { CHAR_NAME, CHAR_ROW, CHAR_VALUE, isPublicCharacteristicVisible, ProductCharacteristics } from './ProductCharacteristics';
 
 type KeyValuePair = {
     name: string;
@@ -201,36 +200,17 @@ function hasVisibleCharacteristics(
     );
 }
 
-function SectionCard({
-    title,
-    children,
-    className = '',
-}: {
-    title: string;
-    children: ReactNode;
-    className?: string;
-}) {
-    return (
-        <section
-            className={`w-full max-w-full rounded-md border border-[#e2e2e2] bg-white p-8 ${className}`}
-        >
-            <h2 className="heading-1 text-xl">{title}</h2>
-            <div className="mt-6 min-w-0">{children}</div>
-        </section>
-    );
-}
-
 function TechnicalPairs({ pairs, fallback }: { pairs: KeyValuePair[]; fallback: string[] }) {
     return (
         <div className="space-y-5">
-            <dl className="divide-y divide-[var(--gray-bg)]">
+            <dl className="divide-y divide-[var(--line)]">
                 {pairs.map((pair, index) => (
                     <div
                         key={`${pair.name}-${pair.value}-${index}`}
-                        className="grid grid-cols-1 gap-1 py-4 xl:grid-cols-[180px_1fr] xl:gap-4"
+                        className={CHAR_ROW}
                     >
-                        <dt className="min-w-0 break-words text-sm text-[#888]">{pair.name}</dt>
-                        <dd className="min-w-0 break-words text-sm leading-7 text-[#1a1a1a] [overflow-wrap:anywhere]">
+                        <dt className={CHAR_NAME}>{pair.name}</dt>
+                        <dd className={CHAR_VALUE}>
                             {pair.value}
                         </dd>
                     </div>
@@ -238,7 +218,7 @@ function TechnicalPairs({ pairs, fallback }: { pairs: KeyValuePair[]; fallback: 
             </dl>
 
             {fallback.length > 0 && (
-                <div className="space-y-3 text-base leading-8 text-slate-700">
+                <div className="space-y-3 text-[15px] leading-7 text-[#333]">
                     {fallback.map((line, index) => (
                         <p key={`${line}-${index}`} className="break-words whitespace-pre-line">
                             {line}
@@ -263,7 +243,6 @@ export function ProductContentSection({
     characteristics?: Record<string, unknown>;
     characteristicItems?: ProductCharacteristicItem[];
 }) {
-    const [isExpanded, setIsExpanded] = useState(false);
 
     const descriptionSections = useMemo(() => buildDescriptionSections(descriptions), [descriptions]);
     const visibleCharacteristics = useMemo(
@@ -280,7 +259,7 @@ export function ProductContentSection({
     function renderDescriptionSection(section: ProductDescriptionSection) {
         if (section.kind === 'pairs') {
             return (
-                <CollapsibleCard key={section.id} title={section.title} count={section.pairs.length}>
+                <CollapsibleCard key={section.id} title={section.title} count={section.pairs.length + section.fallback.length}>
                     <TechnicalPairs pairs={section.pairs} fallback={section.fallback} />
                 </CollapsibleCard>
             );
@@ -299,23 +278,13 @@ export function ProductContentSection({
             );
         }
 
-        const shouldCollapse = section.content.length > 1200;
-        const visibleContent =
-            shouldCollapse && !isExpanded ? `${section.content.slice(0, 1200).trimEnd()}...` : section.content;
 
         return (
-            <SectionCard key={section.id} title={section.title}>
-                <DescriptionContent content={visibleContent} />
-                {shouldCollapse && (
-                    <button
-                        type="button"
-                        onClick={() => setIsExpanded((value) => !value)}
-                        className="button-brand-outline mt-5 flex h-11 items-center justify-center px-5"
-                    >
-                        {isExpanded ? 'Свернуть' : 'Показать полностью'}
-                    </button>
-                )}
-            </SectionCard>
+            <CollapsibleCard key={section.id} title={section.title} defaultOpen>
+                <ClampedBody>
+                    <DescriptionContent content={section.content} />
+                </ClampedBody>
+            </CollapsibleCard>
         );
     }
 
@@ -333,10 +302,10 @@ export function ProductContentSection({
                     )}
                 </div>
 
-                <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(360px,520px)] lg:items-start lg:gap-6">
+                <div className="hidden lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
                     <div className="min-w-0 space-y-6">{narrativeSections.map(renderDescriptionSection)}</div>
 
-                    <aside className="min-w-0 space-y-6 lg:sticky lg:top-24 lg:self-start">
+                    <aside className="min-w-0 space-y-6">
                         {technicalSections.map(renderDescriptionSection)}
                         {hasCharacteristics && (
                             <ProductCharacteristics items={characteristicItems} data={characteristics} layout="aside" />
@@ -353,7 +322,7 @@ export function ProductContentSection({
 
     if (hasTechnicalContent) {
         return (
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 xl:items-start">
                 {technicalSections.map(renderDescriptionSection)}
                 {hasCharacteristics && (
                     <ProductCharacteristics items={characteristicItems} data={characteristics} layout="full" />
