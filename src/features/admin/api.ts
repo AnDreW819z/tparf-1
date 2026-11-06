@@ -254,6 +254,16 @@ export type SaveCategoryPayload = {
 	isActive: boolean;
 };
 
+/** Backend ждёт Guid?/null, а пустая строка в JSON даёт 400 при model binding. */
+function normalizeCategoryPayload(payload: SaveCategoryPayload) {
+	return {
+		...payload,
+		parentId: payload.parentId || null,
+		logoUrl: payload.logoUrl || null,
+		externalUrl: payload.externalUrl || null,
+	};
+}
+
 export type SaveCurrencyPayload = {
 	code: string;
 	name: string;
@@ -538,13 +548,13 @@ export async function getCategories() {
 }
 
 export async function createCategory(payload: SaveCategoryPayload) {
-	const { data } = await api.post<Category>('categories', payload, {
+	const { data } = await api.post<Category>('categories', normalizeCategoryPayload(payload), {
 	});
 	return data;
 }
 
 export async function updateCategory(categoryId: string, payload: SaveCategoryPayload) {
-	const { data } = await api.put<Category>(`categories/${categoryId}`, { id: categoryId, ...payload }, {
+	const { data } = await api.put<Category>(`categories/${categoryId}`, { id: categoryId, ...normalizeCategoryPayload(payload) }, {
 	});
 	return data;
 }
