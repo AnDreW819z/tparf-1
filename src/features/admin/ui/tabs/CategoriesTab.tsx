@@ -2,6 +2,7 @@
 
 import { Plus } from 'lucide-react';
 import { buildCategoryLineage } from '../shared';
+import { ImageUploadField } from '../ImageUploadField';
 import { useAdminPanel } from '../useAdminPanelState';
 import {
 	ActivePill,
@@ -184,14 +185,11 @@ export function CategoriesTab() {
 					</fieldset>
 
 					<div className="grid grid-cols-[1fr_96px] gap-3">
-						<Field label="Логотип" hint="Ссылка на картинку">
-							<input
-								className={fieldClass}
-								placeholder="https://…"
-								value={categoryForm.logoUrl ?? ''}
-								onChange={(event) => setCategoryForm((current) => ({ ...current, logoUrl: event.target.value }))}
-							/>
-						</Field>
+						<ImageUploadField
+							label="Логотип"
+							value={categoryForm.logoUrl ?? ''}
+							onChange={(value) => setCategoryForm((current) => ({ ...current, logoUrl: value }))}
+						/>
 						<Field label="Порядок">
 							<input
 								type="number"

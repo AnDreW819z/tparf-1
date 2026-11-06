@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Plus, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { api } from '@/shared/api/axios';
 import {
     createProduct,
     getBrands,
@@ -102,6 +103,8 @@ export function NewProductForm() {
     const [categoryQuery, setCategoryQuery] = useState('');
     const [photos, setPhotos] = useState<string[]>([]);
     const [photoUrl, setPhotoUrl] = useState('');
+    const [uploadingPhoto, setUploadingPhoto] = useState(false);
+    const photoInputRef = useRef<HTMLInputElement>(null);
     const [description, setDescription] = useState('');
     const [specs, setSpecs] = useState<SpecRow[]>([{ key: '', value: '' }]);
     const [pasteOpen, setPasteOpen] = useState(false);
@@ -161,6 +164,35 @@ export function NewProductForm() {
         if (!url) return;
         setPhotos((list) => [...list, url]);
         setPhotoUrl('');
+    }
+
+    async function uploadPhoto(event: React.ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            toast.error('Выберите изображение: JPG, PNG, WEBP или GIF');
+            return;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+            toast.error('Файл больше 10 МБ');
+            return;
+        }
+
+        setUploadingPhoto(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const { data } = await api.post<{ url: string }>('uploads/images', formData);
+            setPhotos((list) => [...list, data.url]);
+            toast.success('Фото загружено');
+        } catch {
+            toast.error('Не удалось загрузить фото');
+        } finally {
+            setUploadingPhoto(false);
+        }
     }
 
     function updateSpec(index: number, field: keyof SpecRow, value: string) {
@@ -477,6 +509,21 @@ export function NewProductForm() {
                                 className="h-11 flex-none rounded border border-[var(--primary-blue)] bg-white px-4 text-sm font-medium text-[var(--primary-blue)]"
                             >
                                 Добавить
+                            </button>
+                            <input
+                                ref={photoInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/gif"
+                                className="hidden"
+                                onChange={(event) => void uploadPhoto(event)}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => photoInputRef.current?.click()}
+                                disabled={uploadingPhoto}
+                                className="h-11 flex-none rounded border border-[#C9D0D8] bg-white px-4 text-sm font-medium text-[var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {uploadingPhoto ? 'Загрузка…' : 'Загрузить файл'}
                             </button>
                         </div>
                         <span className="text-[13px] text-[var(--muted)]">Первое фото — главное.</span>

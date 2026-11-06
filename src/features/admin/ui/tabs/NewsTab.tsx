@@ -4,6 +4,7 @@ import { ImageIcon, Plus } from 'lucide-react';
 import { formatDate } from '../shared';
 import { useAdminPanel } from '../useAdminPanelState';
 import { Btn, EditorActions, Empty, Field, Panel, PanelHeader, SplitLayout, areaClass, fieldClass } from '../kit';
+import { ImageUploadField } from '../ImageUploadField';
 
 export function NewsTab() {
 	const {
@@ -94,14 +95,11 @@ export function NewsTab() {
 							onChange={(event) => setNewsForm((current) => ({ ...current, content: event.target.value }))}
 						/>
 					</Field>
-					<Field label="Картинка" hint="Необязательно. Ссылка на изображение">
-						<input
-							className={fieldClass}
-							placeholder="https://…"
-							value={newsForm.imageUrl ?? ''}
-							onChange={(event) => setNewsForm((current) => ({ ...current, imageUrl: event.target.value }))}
-						/>
-					</Field>
+					<ImageUploadField
+						label="Картинка"
+						value={newsForm.imageUrl ?? ''}
+						onChange={(value) => setNewsForm((current) => ({ ...current, imageUrl: value }))}
+					/>
 
 					<fieldset className="m-0 min-w-0 space-y-3 rounded border border-[var(--line)] p-3">
 						<legend className="px-1 text-[13px] font-medium text-[#3D4757]">Кнопка под новостью</legend>

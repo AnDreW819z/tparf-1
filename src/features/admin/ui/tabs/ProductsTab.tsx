@@ -11,6 +11,7 @@ import {
 	emptyImageForm,
 	formatMoney,
 } from '../shared';
+import { ImageUploadField } from '../ImageUploadField';
 import { useAdminPanel } from '../useAdminPanelState';
 import {
 	ActivePill,
@@ -477,14 +478,11 @@ export function ProductsTab() {
 									)}
 								</ul>
 								<div className="grid items-end gap-3 border-t border-[var(--line)] bg-[#FAFBFC] px-5 py-4 md:grid-cols-[1fr_90px_auto_auto]">
-									<Field label={editingImageId ? 'Изменить фото' : 'Добавить фото'}>
-										<input
-											className={fieldClass}
-											placeholder="https://…/photo.jpg"
-											value={imageForm.imageUrl}
-											onChange={(event) => setImageForm((current) => ({ ...current, imageUrl: event.target.value }))}
-										/>
-									</Field>
+									<ImageUploadField
+										label={editingImageId ? 'Изменить фото' : 'Добавить фото'}
+										value={imageForm.imageUrl}
+										onChange={(value) => setImageForm((current) => ({ ...current, imageUrl: value }))}
+									/>
 									<Field label="Порядок">
 										<input
 											type="number"

@@ -1,6 +1,7 @@
 'use client';
 
 import { Plus } from 'lucide-react';
+import { ImageUploadField } from '../ImageUploadField';
 import { useAdminPanel } from '../useAdminPanelState';
 import {
 	ActivePill,
@@ -161,14 +162,11 @@ export function BrandsTab() {
 							onChange={(event) => setBrandForm((current) => ({ ...current, countryOfOrigin: event.target.value }))}
 						/>
 					</Field>
-					<Field label="Логотип" hint="Ссылка на картинку">
-						<input
-							className={fieldClass}
-							placeholder="https://…"
-							value={brandForm.logoUrl ?? ''}
-							onChange={(event) => setBrandForm((current) => ({ ...current, logoUrl: event.target.value }))}
-						/>
-					</Field>
+					<ImageUploadField
+						label="Логотип"
+						value={brandForm.logoUrl ?? ''}
+						onChange={(value) => setBrandForm((current) => ({ ...current, logoUrl: value }))}
+					/>
 					<Field label="Описание">
 						<textarea
 							className={areaClass}
