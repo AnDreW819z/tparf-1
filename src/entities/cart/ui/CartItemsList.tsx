@@ -7,10 +7,10 @@ import type { CartItemType } from '@/shared/store/useCartStore';
 
 interface CartItemsListProps {
     items: CartItemType[];
-    token: string;
+
 }
 
-export default function CartItemsList({ items, token }: CartItemsListProps) {
+export default function CartItemsList({ items }: CartItemsListProps) {
     return (
         <div className="rounded-md border border-[var(--line)]">
             <div className="hidden gap-4 rounded-t-md border-b border-[var(--line)] bg-[var(--surface)] px-5 py-3 text-[13px] text-[var(--muted)] md:flex">
@@ -20,7 +20,7 @@ export default function CartItemsList({ items, token }: CartItemsListProps) {
                 <span className="w-10 flex-none" />
             </div>
             {items.map((item) => (
-                <CartItem key={item.id} item={item} token={token} />
+                <CartItem key={item.id} item={item} />
             ))}
         </div>
     );

@@ -76,6 +76,15 @@ export function LoginForm() {
                     Зарегистрироваться
                 </Link>
             </p>
+
+            <p className="mt-2 text-center text-[13px]">
+                <Link
+                    href="/auth/resend-confirmation"
+                    className="font-medium text-[var(--blue-accent)] hover:text-[var(--primary-blue)]"
+                >
+                    Не пришло письмо подтверждения?
+                </Link>
+            </p>
         </>
     );
 }

@@ -28,10 +28,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Переменные окружения для сборки
-# NEXT_PUBLIC_* переменные вшиваются в bundle на этапе сборки
-ARG NEXT_PUBLIC_API_BASE_URL=/api/
+# API_BASE_URL_INTERNAL используется SSR и BFF-прокси на сервере.
 ARG API_BASE_URL_INTERNAL=https://tparf-api.ru/api/
-ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 ENV API_BASE_URL_INTERNAL=$API_BASE_URL_INTERNAL
 
 # Собираем проект

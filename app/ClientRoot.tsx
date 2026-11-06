@@ -1,26 +1,22 @@
 // app/ClientRoot.tsx
 'use client';
 import { useEffect } from 'react';
+import type { User } from '@/shared/api/services/auth';
 import { useUserStore } from '@/shared/store/useUserStore';
 
 interface ClientRootProps {
     children: React.ReactNode;
-    token: string | null; // ✅ Принимаем token через props
+    initialUser: User | null;
 }
 
-export function ClientRoot({ children, token }: ClientRootProps) {
-    const fetchUser = useUserStore((state) => state.fetchUser);
+export function ClientRoot({ children, initialUser }: ClientRootProps) {
     const setUser = useUserStore((state) => state.setUser);
 
     useEffect(() => {
-        if (token) {
-            // ✅ Вызываем fetchUser с token
-            fetchUser(token);
-        } else {
-            // ✅ Если нет токена, очищаем user
-            setUser(null);
-        }
-    }, [token, fetchUser, setUser]);
+        // Пользователь пришёл из server component. Токен в браузер не передаётся:
+        // запросы к API идут через BFF-прокси с HttpOnly-cookie.
+        setUser(initialUser);
+    }, [initialUser, setUser]);
 
     return <>{children}</>;
 }

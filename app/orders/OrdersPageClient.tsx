@@ -3,12 +3,12 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import OrdersList from '@/entities/orders/ui/OrdersList';
-import type { UserWithToken } from '@/shared/api/services/auth';
+import type { User } from '@/shared/api/services/auth';
 import type { OrdersResponse } from '@/shared/api/services/orders';
 
 interface OrdersPageClientProps {
     orders: OrdersResponse;
-    user: UserWithToken;
+    user: User;
 }
 
 type Filter = 'all' | 'active' | 'done';
@@ -88,7 +88,7 @@ export default function OrdersPageClient({ orders, user }: OrdersPageClientProps
                     Заказов в этом разделе нет.
                 </div>
             ) : (
-                <OrdersList orders={visible} token={user.token} />
+                <OrdersList orders={visible} />
             )}
 
             {orders.items.length > 0 && (

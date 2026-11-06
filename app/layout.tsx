@@ -20,7 +20,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     return (
         <html lang="ru">
             <body>
-                <ClientRoot token={user?.token ?? null}>
+                <ClientRoot initialUser={user}>
                     <Header user={user} />
                     <main className="page-sheet">{children}</main>
                     <Footer />

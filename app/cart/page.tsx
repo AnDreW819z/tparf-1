@@ -2,13 +2,12 @@
 import { redirect } from 'next/navigation';
 import { getCart } from '@/shared/api/services/cart';
 import CartPageClient from './CartPageClient';
-import { getUserFromCookie } from '@/shared/server/auth';
+import { getAuthToken, getUserFromCookie } from '@/shared/server/auth';
 
 export default async function CartPage() {
     const user = await getUserFromCookie();
-    if (!user || !user.token) redirect('/auth/login');
-
-    const token = user.token!; // теперь токен из user
+    const token = await getAuthToken();
+    if (!user || !token) redirect('/auth/login');
 
     try {
         const cart = await getCart(token);

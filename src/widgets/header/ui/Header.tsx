@@ -10,7 +10,7 @@ import { canAccessAdminPanel } from '@/shared/lib/access';
 import { useCartStore } from '@/shared/store/useCartStore';
 import s from './Header.module.css';
 
-type HeaderUser = (User & { token?: string }) | null;
+type HeaderUser = User | null;
 
 interface HeaderProps {
     user: HeaderUser;
@@ -25,10 +25,10 @@ export function Header({ user }: HeaderProps) {
     const cartCount = cart?.items?.length ?? 0;
 
     useEffect(() => {
-        if (user?.token && !cart) {
-            void fetchCart(user.token);
+        if (user && !cart) {
+            void fetchCart();
         }
-    }, [user?.token, cart, fetchCart]);
+    }, [user, cart, fetchCart]);
 
     function submitSearch(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();

@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { OneClickBuyModal } from '@/entities/cart/ui/OneClickBuyModal';
 import { addToCart, getCart } from '@/shared/api/services/cart';
-import type { UserWithToken } from '@/shared/api/services/auth';
+import type { User } from '@/shared/api/services/auth';
 import { createOneClickOrder } from '@/shared/api/services/orders';
 import type { CartInfo } from '@/shared/api/services/product';
 import { formatProductPrice, isRequestPrice } from '@/shared/lib/price';
@@ -21,7 +21,7 @@ interface ProductInfoClientProps {
     currencyCode: string;
     brandName?: string | null;
     cartInfo: CartInfo;
-    user: UserWithToken | null;
+    user: User | null;
     /** false — поставщик отметил «нет в наличии». */
     isAvailable?: boolean;
     /** false — снят с продажи (пропал из фида поставщика). */
@@ -52,7 +52,7 @@ export function ProductInfoClient({
     const [isPending, startTransition] = useTransition();
     const [showOneClickModal, setShowOneClickModal] = useState(false);
     const [selectedQuantity, setSelectedQuantity] = useState(1);
-    const token = user?.token;
+
     const isPriceOnRequest = isRequestPrice(price);
     const primaryActionLabel = isPriceOnRequest ? 'Добавить в заявку' : 'Добавить в корзину';
     const secondaryActionLabel = isPriceOnRequest ? 'Запросить цену' : 'Купить в 1 клик';
@@ -97,15 +97,15 @@ export function ProductInfoClient({
     };
 
     const handleAddToCart = (quantity: number) => {
-        if (!token) {
+        if (!user) {
             redirectToLogin();
             return;
         }
 
         startTransition(async () => {
             try {
-                await addToCart(token, productId, quantity);
-                const updatedCart = await getCart(token);
+                await addToCart(productId, quantity);
+                const updatedCart = await getCart();
                 setCart(updatedCart);
                 toast.success(isPriceOnRequest ? 'Позиция добавлена в заявку' : 'Товар добавлен в корзину', {
                     action: isPriceOnRequest
@@ -123,7 +123,7 @@ export function ProductInfoClient({
     };
 
     const handleQuantityChange = (newQuantity: number) => {
-        if (!token) {
+        if (!user) {
             redirectToLogin();
             return;
         }
@@ -131,14 +131,14 @@ export function ProductInfoClient({
         startTransition(async () => {
             try {
                 if (newQuantity <= 0) {
-                    await removeItem(token, productId);
+                    await removeItem(productId);
                     toast.success('Товар удален из корзины');
                 } else {
-                    await updateQuantity(token, productId, newQuantity);
+                    await updateQuantity(productId, newQuantity);
                     toast.success('Количество обновлено');
                 }
 
-                const updatedCart = await getCart(token);
+                const updatedCart = await getCart();
                 setCart(updatedCart);
             } catch (error) {
                 console.error('Ошибка изменения количества:', error);
@@ -151,14 +151,14 @@ export function ProductInfoClient({
     const decreaseSelectedQuantity = () => setSelectedQuantity((value) => Math.max(1, value - 1));
 
     const handleOneClickBuy = (quantity: number) => {
-        if (!token) {
+        if (!user) {
             redirectToLogin();
             return;
         }
 
         startTransition(async () => {
             try {
-                const newOrder = await createOneClickOrder(token, [{ productId, quantity }]);
+                const newOrder = await createOneClickOrder([{ productId, quantity }]);
                 toast.success(
                     `${isPriceOnRequest ? 'Заявка' : 'Заказ'} №${newOrder.orderNumber} успешно создан${isPriceOnRequest ? 'а' : ''}!`,
                 );

@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 
 interface Props {
     item: CartItemType;
-    token: string;
+
 }
 
 function getErrorMessage(error: unknown) {
@@ -23,7 +23,7 @@ function getErrorMessage(error: unknown) {
     return 'Ошибка при изменении количества';
 }
 
-export default function CartItem({ item, token }: Props) {
+export default function CartItem({ item }: Props) {
     const [quantity, setQuantity] = useState(item.quantity);
     const [loading, setLoading] = useState(false);
     const [showQuickModal, setShowQuickModal] = useState(false);
@@ -36,12 +36,12 @@ export default function CartItem({ item, token }: Props) {
 
         try {
             if (newQuantity <= 0) {
-                await removeItem(token, item.productId);
+                await removeItem(item.productId);
                 toast.success('Товар удален из корзины');
                 return;
             }
 
-            await updateQuantity(token, item.productId, newQuantity);
+            await updateQuantity(item.productId, newQuantity);
             setQuantity(newQuantity);
             toast.success('Количество обновлено');
         } catch (error) {
@@ -127,7 +127,7 @@ export default function CartItem({ item, token }: Props) {
 
             <span className="w-[110px] flex-none whitespace-nowrap text-right font-semibold">{totalLabel}</span>
 
-            <CartItemDeleteButton productId={item.productId} token={token} />
+            <CartItemDeleteButton productId={item.productId} />
 
             <QuickQuantityModal
                 isOpen={showQuickModal}

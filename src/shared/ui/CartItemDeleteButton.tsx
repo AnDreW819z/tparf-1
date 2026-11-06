@@ -8,17 +8,17 @@ import { useTransition } from 'react';
 
 interface CartItemDeleteButtonProps {
     productId: string;
-    token: string;
+
 }
 
-export function CartItemDeleteButton({ productId, token }: CartItemDeleteButtonProps) {
+export function CartItemDeleteButton({ productId }: CartItemDeleteButtonProps) {
     const [isPending, startTransition] = useTransition();
     const removeItem = useCartStore((state) => state.removeItem);
 
     const handleDelete = () => {
         startTransition(async () => {
             try {
-                await removeItem(token, productId);
+                await removeItem(productId);
                 toast.success('Товар удален из корзины');
             } catch {
                 toast.error('Ошибка при удалении товара');

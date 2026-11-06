@@ -190,17 +190,44 @@ export type VendorHealth = {
 	service: string;
 	vendorsCount: number;
 	vendors: string[];
+	importRunning: boolean;
+	import: VendorImportStatus;
 	timestamp: string;
 };
 
-export type ImportResponse = {
+export type VendorImportState =
+	| 'idle'
+	| 'running'
+	| 'completed'
+	| 'completed_with_errors'
+	| 'failed'
+	| 'cancelled';
+
+export type VendorImportStatus = {
+	operationId: string | null;
+	state: VendorImportState;
+	isRunning: boolean;
+	trigger: string | null;
+	startedAt: string | null;
+	finishedAt: string | null;
+	currentVendor: string | null;
+	totalVendors: number;
+	completedVendors: number;
+	failedVendors: number;
+	pendingVendors: string[];
+	failedVendorKeys: string[];
+	lastError: string | null;
+};
+
+export type ImportAcceptedResponse = {
 	success: boolean;
+	accepted: boolean;
+	operationId: string;
+	statusUrl: string;
 	message: string;
 	vendor?: string;
-	timestamp?: string;
-	results?: Record<string, unknown>;
-	successCount?: number;
-	failCount?: number;
+	totalVendors?: number;
+	startedAt: string;
 };
 
 export type ProductFilters = FilterParams & {
@@ -291,10 +318,6 @@ export type SystemNotificationPayload = {
 	type: number;
 };
 
-function authHeaders(token: string) {
-	return { Authorization: `Bearer ${token}` };
-}
-
 function buildFilterParams(filters?: FilterParams) {
 	const params = new URLSearchParams();
 	if (!filters) return params;
@@ -320,31 +343,28 @@ function buildProductParams(filters?: ProductFilters) {
 	return params;
 }
 
-export async function getDashboard(token: string) {
+export async function getDashboard() {
 	const { data } = await api.get<DashboardData>('admin/dashboard', {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function getAdminUsers(token: string, filters?: FilterParams) {
+export async function getAdminUsers(filters?: FilterParams) {
 	const { data } = await api.get<PagedResult<AdminUser>>('admin/users', {
-		headers: authHeaders(token),
 		params: buildFilterParams(filters),
 	});
 	return data;
 }
 
-export async function updateAdminUserStatus(token: string, userId: string, isActive: boolean) {
+export async function updateAdminUserStatus(userId: string, isActive: boolean) {
 	await api.put(
 		`admin/users/${userId}/status`,
 		{ isActive },
-		{ headers: authHeaders(token) },
+		{},
 	);
 }
 
 export async function changeAdminUserRole(
-	token: string,
 	userId: string,
 	role: AdminRole,
 	brandIds: string[],
@@ -352,121 +372,105 @@ export async function changeAdminUserRole(
 	await api.put(
 		`admin/users/${userId}/role`,
 		{ role, brandIds },
-		{ headers: authHeaders(token) },
+		{},
 	);
 }
 
-export async function bulkAdminUsers(token: string, userIds: string[], operation: UserOperation) {
+export async function bulkAdminUsers(userIds: string[], operation: UserOperation) {
 	await api.post(
 		'admin/bulk/users',
 		{ userIds, operation },
-		{ headers: authHeaders(token) },
+		{},
 	);
 }
 
-export async function downloadReport(token: string, type: ReportType) {
+export async function downloadReport(type: ReportType) {
 	const { data } = await api.get<Blob>(`admin/reports/${type}`, {
-		headers: authHeaders(token),
 		responseType: 'blob',
 	});
 	return data;
 }
 
-export async function getProducts(token: string, filters?: ProductFilters) {
+export async function getProducts(filters?: ProductFilters) {
 	const { data } = await api.get<PagedResult<Product>>('products', {
-		headers: authHeaders(token),
 		params: buildProductParams(filters),
 	});
 	return data;
 }
 
-export async function getProduct(token: string, productId: string) {
+export async function getProduct(productId: string) {
 	const { data } = await api.get<Product>(`products/${productId}`, {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function createProduct(token: string, payload: SaveProductPayload) {
+export async function createProduct(payload: SaveProductPayload) {
 	const { data } = await api.post<Product>('products', payload, {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function updateProduct(token: string, productId: string, payload: SaveProductPayload) {
+export async function updateProduct(productId: string, payload: SaveProductPayload) {
 	const { data } = await api.put<Product>(`products/${productId}`, payload, {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function deleteProduct(token: string, productId: string) {
+export async function deleteProduct(productId: string) {
 	await api.delete(`products/${productId}`, {
-		headers: authHeaders(token),
 	});
 }
 
-export async function bulkProductStatus(token: string, ids: string[], operation: EntityOperation) {
+export async function bulkProductStatus(ids: string[], operation: EntityOperation) {
 	await api.post(
 		`products/bulk/${operation}`,
 		{ ids },
-		{ headers: authHeaders(token) },
+		{},
 	);
 }
 
-export async function deleteAllProducts(token: string) {
+export async function deleteAllProducts() {
 	await api.delete('products/all', {
-		headers: authHeaders(token),
 	});
 }
 
 export async function saveProductImage(
-	token: string,
 	productId: string,
 	payload: SaveImagePayload,
 	imageId?: string | null,
 ) {
 	const { data } = imageId
 		? await api.put<ProductImage>(`products/${productId}/images/${imageId}`, payload, {
-				headers: authHeaders(token),
 			})
 		: await api.post<ProductImage>(`products/${productId}/images`, payload, {
-				headers: authHeaders(token),
 			});
 	return data;
 }
 
-export async function deleteProductImage(token: string, productId: string, imageId: string) {
+export async function deleteProductImage(productId: string, imageId: string) {
 	await api.delete(`products/${productId}/images/${imageId}`, {
-		headers: authHeaders(token),
 	});
 }
 
 export async function saveProductDescription(
-	token: string,
 	productId: string,
 	payload: SaveDescriptionPayload,
 	descriptionId?: string | null,
 ) {
 	const { data } = descriptionId
 		? await api.put<ProductDescription>(`products/${productId}/descriptions/${descriptionId}`, payload, {
-				headers: authHeaders(token),
 			})
 		: await api.post<ProductDescription>(`products/${productId}/descriptions`, payload, {
-				headers: authHeaders(token),
 			});
 	return data;
 }
 
-export async function deleteProductDescription(token: string, productId: string, descriptionId: string) {
+export async function deleteProductDescription(productId: string, descriptionId: string) {
 	await api.delete(`products/${productId}/descriptions/${descriptionId}`, {
-		headers: authHeaders(token),
 	});
 }
 
 export async function saveProductCharacteristic(
-	token: string,
 	productId: string,
 	payload: SaveCharacteristicPayload,
 	characteristicId?: string | null,
@@ -475,244 +479,218 @@ export async function saveProductCharacteristic(
 		? await api.put<ProductCharacteristic>(
 				`products/${productId}/characteristics/${characteristicId}`,
 				payload,
-				{ headers: authHeaders(token) },
+				{},
 			)
 		: await api.post<ProductCharacteristic>(`products/${productId}/characteristics`, payload, {
-				headers: authHeaders(token),
 			});
 	return data;
 }
 
 export async function deleteProductCharacteristic(
-	token: string,
 	productId: string,
 	characteristicId: string,
 ) {
 	await api.delete(`products/${productId}/characteristics/${characteristicId}`, {
-		headers: authHeaders(token),
 	});
 }
 
-export async function getBrands(token: string, filters?: FilterParams) {
+export async function getBrands(filters?: FilterParams) {
 	const { data } = await api.get<PagedResult<Brand>>('brands', {
-		headers: authHeaders(token),
 		params: buildFilterParams(filters),
 	});
 	return data;
 }
 
-export async function createBrand(token: string, payload: SaveBrandPayload) {
+export async function createBrand(payload: SaveBrandPayload) {
 	const { data } = await api.post<Brand>('brands', payload, {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function updateBrand(token: string, brandId: string, payload: SaveBrandPayload) {
+export async function updateBrand(brandId: string, payload: SaveBrandPayload) {
 	const { data } = await api.put<Brand>(`brands/${brandId}`, { id: brandId, ...payload }, {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function deleteBrand(token: string, brandId: string) {
+export async function deleteBrand(brandId: string) {
 	await api.delete(`brands/${brandId}`, {
-		headers: authHeaders(token),
 	});
 }
 
-export async function bulkBrandStatus(token: string, ids: string[], operation: EntityOperation) {
+export async function bulkBrandStatus(ids: string[], operation: EntityOperation) {
 	await api.post(
 		`brands/bulk/${operation}`,
 		{ ids },
-		{ headers: authHeaders(token) },
+		{},
 	);
 }
 
-export async function deleteAllBrands(token: string) {
+export async function deleteAllBrands() {
 	await api.delete('brands/all', {
-		headers: authHeaders(token),
 	});
 }
 
-export async function getCategories(token: string) {
+export async function getCategories() {
 	const { data } = await api.get<Category[]>('categories', {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function createCategory(token: string, payload: SaveCategoryPayload) {
+export async function createCategory(payload: SaveCategoryPayload) {
 	const { data } = await api.post<Category>('categories', payload, {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function updateCategory(token: string, categoryId: string, payload: SaveCategoryPayload) {
+export async function updateCategory(categoryId: string, payload: SaveCategoryPayload) {
 	const { data } = await api.put<Category>(`categories/${categoryId}`, { id: categoryId, ...payload }, {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function deleteCategory(token: string, categoryId: string) {
+export async function deleteCategory(categoryId: string) {
 	await api.delete(`categories/${categoryId}`, {
-		headers: authHeaders(token),
 	});
 }
 
-export async function bulkCategoryStatus(token: string, ids: string[], operation: EntityOperation) {
+export async function bulkCategoryStatus(ids: string[], operation: EntityOperation) {
 	await api.post(
 		`categories/bulk/${operation}`,
 		{ ids },
-		{ headers: authHeaders(token) },
+		{},
 	);
 }
 
-export async function deleteAllCategories(token: string) {
+export async function deleteAllCategories() {
 	await api.delete('categories/all', {
-		headers: authHeaders(token),
 	});
 }
 
-export async function getCurrencies(token: string, filters?: FilterParams) {
+export async function getCurrencies(filters?: FilterParams) {
 	const { data } = await api.get<PagedResult<Currency>>('currencies', {
-		headers: authHeaders(token),
 		params: buildFilterParams(filters),
 	});
 	return data;
 }
 
-export async function getNewsItems(token: string) {
+export async function getNewsItems() {
 	const { data } = await api.get<NewsItem[]>('news', {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function createNewsItem(token: string, payload: SaveNewsPayload) {
+export async function createNewsItem(payload: SaveNewsPayload) {
 	const { data } = await api.post<NewsItem>('news', payload, {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function updateNewsItem(token: string, newsId: string, payload: SaveNewsPayload) {
+export async function updateNewsItem(newsId: string, payload: SaveNewsPayload) {
 	const { data } = await api.put<NewsItem>(`news/${newsId}`, { id: newsId, ...payload }, {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function deleteNewsItem(token: string, newsId: string) {
+export async function deleteNewsItem(newsId: string) {
 	await api.delete(`news/${newsId}`, {
-		headers: authHeaders(token),
 	});
 }
 
-export async function createCurrency(token: string, payload: SaveCurrencyPayload) {
+export async function createCurrency(payload: SaveCurrencyPayload) {
 	const { data } = await api.post<Currency>('currencies', payload, {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function updateCurrency(token: string, currencyId: string, payload: SaveCurrencyPayload) {
+export async function updateCurrency(currencyId: string, payload: SaveCurrencyPayload) {
 	const { data } = await api.put<Currency>(`currencies/${currencyId}`, payload, {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function deleteCurrency(token: string, currencyId: string) {
+export async function deleteCurrency(currencyId: string) {
 	await api.delete(`currencies/${currencyId}`, {
-		headers: authHeaders(token),
 	});
 }
 
-export async function getOrders(token: string, filters?: FilterParams) {
+export async function getOrders(filters?: FilterParams) {
 	const { data } = await api.get<PagedResult<Order>>('orders/admin', {
-		headers: authHeaders(token),
 		params: buildFilterParams(filters),
 	});
 	return data;
 }
 
-export async function getOrder(token: string, orderId: string) {
+export async function getOrder(orderId: string) {
 	const { data } = await api.get<Order>(`orders/admin/${orderId}`, {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function updateOrderStatus(token: string, orderId: string, status: number) {
+export async function updateOrderStatus(orderId: string, status: number) {
 	const { data } = await api.put<Order>(
 		`orders/admin/${orderId}/status`,
 		{ status },
-		{ headers: authHeaders(token) },
+		{},
 	);
 	return data;
 }
 
-export async function getTemplates(token: string) {
+export async function getTemplates() {
 	const { data } = await api.get<NotificationTemplate[]>('notifications/templates', {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function createTemplate(token: string, payload: SaveTemplatePayload) {
+export async function createTemplate(payload: SaveTemplatePayload) {
 	const { data } = await api.post<NotificationTemplate>('notifications/templates', payload, {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function getEmailHistory(token: string, filters?: FilterParams) {
+export async function getEmailHistory(filters?: FilterParams) {
 	const { data } = await api.get<PagedResult<EmailLog>>('notifications/history', {
-		headers: authHeaders(token),
 		params: buildFilterParams(filters),
 	});
 	return data;
 }
 
-export async function sendBulkEmail(token: string, payload: BulkEmailPayload) {
+export async function sendBulkEmail(payload: BulkEmailPayload) {
 	await api.post('notifications/bulk', payload, {
-		headers: authHeaders(token),
 	});
 }
 
-export async function sendSystemNotification(token: string, payload: SystemNotificationPayload) {
+export async function sendSystemNotification(payload: SystemNotificationPayload) {
 	await api.post('notifications/send', payload, {
-		headers: authHeaders(token),
 	});
 }
 
-export async function getVendors(token: string) {
+export async function getVendors() {
 	const { data } = await api.get<VendorListResponse>('vendor-import/vendors', {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function getVendorHealth(token: string) {
+export async function getVendorHealth() {
 	const { data } = await api.get<VendorHealth>('vendor-import/health', {
-		headers: authHeaders(token),
 	});
 	return data;
 }
 
-export async function importVendor(token: string, vendor: string) {
-	const { data } = await api.post<ImportResponse>(`vendor-import/${vendor}/import`, {}, {
-		headers: authHeaders(token),
+export async function getImportStatus() {
+	const { data } = await api.get<VendorImportStatus>('vendor-import/status', {
 	});
 	return data;
 }
 
-export async function importAllVendors(token: string) {
-	const { data } = await api.post<ImportResponse>('vendor-import/import-all', {}, {
-		headers: authHeaders(token),
+export async function importVendor(vendor: string) {
+	const { data } = await api.post<ImportAcceptedResponse>(`vendor-import/${vendor}/import`, {}, {
+	});
+	return data;
+}
+
+export async function importAllVendors() {
+	const { data } = await api.post<ImportAcceptedResponse>('vendor-import/import-all', {}, {
 	});
 	return data;
 }

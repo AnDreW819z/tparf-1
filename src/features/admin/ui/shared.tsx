@@ -18,7 +18,7 @@ import {
 	type SaveTemplatePayload,
 	type SystemNotificationPayload,
 } from '@/features/admin/api';
-export type AuthenticatedUser = User & { token: string };
+export type AuthenticatedUser = User;
 
 export type AdminTab =
 	| 'dashboard'

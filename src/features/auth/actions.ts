@@ -4,10 +4,12 @@ import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { ZodError } from 'zod';
 import { loginSchema, registerSchema } from './validation';
-import { login as loginApi, register } from '@/shared/api/services/auth';
+import { login as loginApi, register } from '@/shared/server/auth-api';
+import { resendConfirmation } from '@/shared/api/services/auth';
 
 export type RegisterState = { ok: boolean; errors?: Record<string, string>; message?: string };
 export type LoginState = { ok: boolean; errors?: Record<string, string>; message?: string };
+export type ResendState = { ok: boolean; errors?: Record<string, string>; message?: string };
 
 type ApiErrorPayload =
 	| string
@@ -126,18 +128,22 @@ export async function registerAction(_: RegisterState, formData: FormData): Prom
 		});
 		registeredEmail = parsed.email;
 
-		const cookieStore = await cookies();
-		const secure = await shouldUseSecureCookie();
+		// Токен не выдаётся до подтверждения email. Оставляем поддержку и старого ответа,
+		// чтобы фронтенд не ломался при поэтапном выкатывании backend и frontend.
+		if (response.token) {
+			const cookieStore = await cookies();
+			const secure = await shouldUseSecureCookie();
 
-		cookieStore.set({
-			name: 'auth_token',
-			value: response.token,
-			httpOnly: true,
-			sameSite: 'lax',
-			path: '/',
-			secure,
-			maxAge: 60 * 60 * 24 * 7,
-		});
+			cookieStore.set({
+				name: 'auth_token',
+				value: response.token,
+				httpOnly: true,
+				sameSite: 'lax',
+				path: '/',
+				secure,
+				maxAge: 60 * 60 * 24 * 7,
+			});
+		}
 	} catch (error: unknown) {
 		if (isZodError(error)) {
 			return { ok: false, errors: extractErrors(error) };
@@ -191,4 +197,29 @@ export async function loginAction(_: LoginState, formData: FormData): Promise<Lo
 	}
 
 	redirect('/cart');
+}
+
+export async function resendConfirmationAction(_: ResendState, formData: FormData): Promise<ResendState> {
+	const email = String(formData.get('email') ?? '').trim();
+
+	if (!email) {
+		return { ok: false, errors: { email: 'Укажите email' } };
+	}
+
+	if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+		return { ok: false, errors: { email: 'Некорректный email — проверьте, нет ли опечатки' } };
+	}
+
+	try {
+		const response = await resendConfirmation(email);
+		return { ok: true, message: response.message };
+	} catch (error: unknown) {
+		return {
+			ok: false,
+			message: extractApiMessage(
+				error,
+				'Не удалось отправить письмо. Попробуйте ещё раз чуть позже.',
+			),
+		};
+	}
 }

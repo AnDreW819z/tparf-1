@@ -50,6 +50,7 @@ import {
 	getProduct,
 	getProducts,
 	getTemplates,
+	getImportStatus,
 	getVendorHealth,
 	getVendors,
 	importAllVendors,
@@ -90,6 +91,7 @@ import {
 	type SaveProductPayload,
 	type SaveTemplatePayload,
 	type SystemNotificationPayload,
+	type VendorImportStatus,
 	updateNewsItem,
 } from '@/features/admin/api';
 import {
@@ -140,6 +142,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 	const [emailHistory, setEmailHistory] = useState<PagedResult<EmailLog> | null>(null);
 	const [vendors, setVendors] = useState<string[]>([]);
 	const [vendorHealth, setVendorHealth] = useState<string>('');
+	const [importStatus, setImportStatus] = useState<VendorImportStatus | null>(null);
 
 	const [productDetails, setProductDetails] = useState<Record<string, Product>>({});
 	const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -261,12 +264,12 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 
 	async function loadDashboardData() {
 		if (!admin) return;
-		setDashboard(await getDashboard(user.token));
+		setDashboard(await getDashboard());
 	}
 
 	async function loadUsers(filters = userFilters) {
 		if (!admin) return;
-		const page = await getAdminUsers(user.token, filters);
+		const page = await getAdminUsers(filters);
 		setUsersPage(page);
 		if (selectedUserId) {
 			const current = page.items.find((item) => item.id === selectedUserId);
@@ -283,12 +286,12 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 			...filters,
 			brandIds: admin ? filters.brandIds : user.brandIds,
 		};
-		const page = await getProducts(user.token, mergedFilters);
+		const page = await getProducts(mergedFilters);
 		setProductsPage(page);
 	}
 
 	async function loadProductDetails(productId: string) {
-		const detail = await getProduct(user.token, productId);
+		const detail = await getProduct(productId);
 		setProductDetails((current) => ({ ...current, [productId]: detail }));
 		setSelectedProductId(productId);
 		setProductCategoryDraftId('');
@@ -315,28 +318,28 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 
 	async function loadOrders(filters = orderFilters) {
 		if (!admin) return;
-		const page = await getOrders(user.token, filters);
+		const page = await getOrders(filters);
 		setOrdersPage(page);
 	}
 
 	async function loadBrandsData() {
-		const page = await getBrands(user.token, { page: 1, pageSize: 200 });
+		const page = await getBrands({ page: 1, pageSize: 200 });
 		setBrandsPage(page);
 	}
 
 	async function loadNewsData() {
 		if (!admin) return;
-		const items = await getNewsItems(user.token);
+		const items = await getNewsItems();
 		setNewsItems(items);
 	}
 
 	async function loadCategoriesData() {
-		const tree = await getCategories(user.token);
+		const tree = await getCategories();
 		setCategories(tree);
 	}
 
 	async function loadCurrenciesData() {
-		const page = await getCurrencies(user.token, { page: 1, pageSize: 100 });
+		const page = await getCurrencies({ page: 1, pageSize: 100 });
 		setCurrenciesPage(page);
 		if (!productForm.currencyId && page.items[0]) {
 			setProductForm((current) => ({ ...current, currencyId: page.items[0].id }));
@@ -346,8 +349,8 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 	async function loadNotificationsData() {
 		if (!admin) return;
 		const [templateItems, emailPage] = await Promise.all([
-			getTemplates(user.token),
-			getEmailHistory(user.token, { page: 1, pageSize: 20 }),
+			getTemplates(),
+			getEmailHistory({ page: 1, pageSize: 20 }),
 		]);
 		setTemplates(templateItems);
 		setEmailHistory(emailPage);
@@ -355,9 +358,14 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 
 	async function loadImportsData() {
 		if (!admin) return;
-		const [vendorList, health] = await Promise.all([getVendors(user.token), getVendorHealth(user.token)]);
+		const [vendorList, health, status] = await Promise.all([
+			getVendors(),
+			getVendorHealth(),
+			getImportStatus(),
+		]);
 		setVendors(vendorList.vendors);
 		setVendorHealth(`${health.status} · ${health.vendorsCount} поставщиков`);
+		setImportStatus(status);
 	}
 
 	async function initialize() {
@@ -491,7 +499,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 
 	async function persistPendingProductData(productId: string) {
 		for (const image of pendingImages) {
-			await saveProductImage(user.token, productId, {
+			await saveProductImage(productId, {
 				imageUrl: image.imageUrl,
 				isMain: image.isMain,
 				sortOrder: image.sortOrder,
@@ -499,7 +507,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		}
 
 		for (const description of pendingDescriptions) {
-			await saveProductDescription(user.token, productId, {
+			await saveProductDescription(productId, {
 				type: description.type,
 				content: description.content,
 				sortOrder: description.sortOrder,
@@ -507,7 +515,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		}
 
 		for (const characteristic of pendingCharacteristics) {
-			await saveProductCharacteristic(user.token, productId, {
+			await saveProductCharacteristic(productId, {
 				name: characteristic.name,
 				value: characteristic.value,
 				unit: characteristic.unit,
@@ -522,8 +530,8 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 			'save-product',
 			async () => {
 				const saved = selectedProductId
-					? await updateProduct(user.token, selectedProductId, productForm)
-					: await createProduct(user.token, productForm);
+					? await updateProduct(selectedProductId, productForm)
+					: await createProduct(productForm);
 
 				if (!selectedProductId) {
 					await persistPendingProductData(saved.id);
@@ -541,7 +549,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		await runAction(
 			'delete-product',
 			async () => {
-				await deleteProduct(user.token, productId);
+				await deleteProduct(productId);
 				await loadProducts();
 				if (selectedProductId === productId) resetProductEditor();
 			},
@@ -556,9 +564,9 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 			async () => {
 				if (operation === 'delete-all') {
 					if (!window.confirm('Удалить все товары?')) return;
-					await deleteAllProducts(user.token);
+					await deleteAllProducts();
 				} else if (selectedProductIds.length > 0) {
-					await bulkProductStatus(user.token, selectedProductIds, operation);
+					await bulkProductStatus(selectedProductIds, operation);
 				}
 
 				setSelectedProductIds([]);
@@ -573,7 +581,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 			'save-image',
 			async () => {
 				if (selectedProductId) {
-					await saveProductImage(user.token, selectedProductId, imageForm, editingImageId);
+					await saveProductImage(selectedProductId, imageForm, editingImageId);
 					await loadProductDetails(selectedProductId);
 				} else {
 					const nextItem: PendingProductImage = {
@@ -599,7 +607,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 			'save-description',
 			async () => {
 				if (selectedProductId) {
-					await saveProductDescription(user.token, selectedProductId, descriptionForm, editingDescriptionId);
+					await saveProductDescription(selectedProductId, descriptionForm, editingDescriptionId);
 					await loadProductDetails(selectedProductId);
 				} else {
 					const nextItem: PendingProductDescription = {
@@ -626,7 +634,6 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 			async () => {
 				if (selectedProductId) {
 					await saveProductCharacteristic(
-						user.token,
 						selectedProductId,
 						characteristicForm,
 						editingCharacteristicId,
@@ -660,9 +667,9 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 			`delete-${kind}`,
 			async () => {
 				if (selectedProductId) {
-					if (kind === 'image') await deleteProductImage(user.token, selectedProductId, id);
-					if (kind === 'description') await deleteProductDescription(user.token, selectedProductId, id);
-					if (kind === 'characteristic') await deleteProductCharacteristic(user.token, selectedProductId, id);
+					if (kind === 'image') await deleteProductImage(selectedProductId, id);
+					if (kind === 'description') await deleteProductDescription(selectedProductId, id);
+					if (kind === 'characteristic') await deleteProductCharacteristic(selectedProductId, id);
 					await loadProductDetails(selectedProductId);
 				} else {
 					if (kind === 'image') setPendingImages((current) => current.filter((item) => item.id !== id));
@@ -683,9 +690,9 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 			'save-brand',
 			async () => {
 				if (editingBrandId) {
-					await updateBrand(user.token, editingBrandId, brandForm);
+					await updateBrand(editingBrandId, brandForm);
 				} else {
-					await createBrand(user.token, brandForm);
+					await createBrand(brandForm);
 				}
 
 				await loadBrandsData();
@@ -700,7 +707,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		await runAction(
 			'delete-brand',
 			async () => {
-				await deleteBrand(user.token, brandId);
+				await deleteBrand(brandId);
 				await loadBrandsData();
 			},
 			'Бренд удален.',
@@ -739,9 +746,9 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 			'save-news',
 			async () => {
 				if (editingNewsId) {
-					await updateNewsItem(user.token, editingNewsId, payload);
+					await updateNewsItem(editingNewsId, payload);
 				} else {
-					await createNewsItem(user.token, payload);
+					await createNewsItem(payload);
 				}
 
 				await loadNewsData();
@@ -756,7 +763,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		await runAction(
 			'delete-news',
 			async () => {
-				await deleteNewsItem(user.token, newsId);
+				await deleteNewsItem(newsId);
 				await loadNewsData();
 				if (editingNewsId === newsId) {
 					resetNewsEditor();
@@ -773,9 +780,9 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 			async () => {
 				if (operation === 'delete-all') {
 					if (!window.confirm('Удалить все бренды?')) return;
-					await deleteAllBrands(user.token);
+					await deleteAllBrands();
 				} else if (selectedBrandIds.length > 0) {
-					await bulkBrandStatus(user.token, selectedBrandIds, operation);
+					await bulkBrandStatus(selectedBrandIds, operation);
 				}
 
 				setSelectedBrandIds([]);
@@ -790,9 +797,9 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 			'save-category',
 			async () => {
 				if (editingCategoryId) {
-					await updateCategory(user.token, editingCategoryId, categoryForm);
+					await updateCategory(editingCategoryId, categoryForm);
 				} else {
-					await createCategory(user.token, categoryForm);
+					await createCategory(categoryForm);
 				}
 
 				await loadCategoriesData();
@@ -807,7 +814,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		await runAction(
 			'delete-category',
 			async () => {
-				await deleteCategory(user.token, categoryId);
+				await deleteCategory(categoryId);
 				await loadCategoriesData();
 			},
 			'Категория удалена.',
@@ -821,9 +828,9 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 			async () => {
 				if (operation === 'delete-all') {
 					if (!window.confirm('Удалить все категории?')) return;
-					await deleteAllCategories(user.token);
+					await deleteAllCategories();
 				} else if (selectedCategoryIds.length > 0) {
-					await bulkCategoryStatus(user.token, selectedCategoryIds, operation);
+					await bulkCategoryStatus(selectedCategoryIds, operation);
 				}
 
 				setSelectedCategoryIds([]);
@@ -838,9 +845,9 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 			'save-currency',
 			async () => {
 				if (editingCurrencyId) {
-					await updateCurrency(user.token, editingCurrencyId, currencyForm);
+					await updateCurrency(editingCurrencyId, currencyForm);
 				} else {
-					await createCurrency(user.token, currencyForm);
+					await createCurrency(currencyForm);
 				}
 
 				await loadCurrenciesData();
@@ -855,7 +862,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		await runAction(
 			'delete-currency',
 			async () => {
-				await deleteCurrency(user.token, currencyId);
+				await deleteCurrency(currencyId);
 				await loadCurrenciesData();
 			},
 			'Валюта удалена.',
@@ -867,7 +874,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		await runAction(
 			'save-user-role',
 			async () => {
-				await changeAdminUserRole(user.token, selectedUser.id, userRoleDraft, userBrandDraft);
+				await changeAdminUserRole(selectedUser.id, userRoleDraft, userBrandDraft);
 				await loadUsers();
 			},
 			'Роль пользователя обновлена.',
@@ -879,7 +886,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		await runAction(
 			'save-user-status',
 			async () => {
-				await updateAdminUserStatus(user.token, selectedUser.id, userStatusDraft);
+				await updateAdminUserStatus(selectedUser.id, userStatusDraft);
 				await loadUsers();
 			},
 			'Статус пользователя обновлен.',
@@ -900,8 +907,8 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		await runAction(
 			'save-user',
 			async () => {
-				if (roleChanged) await changeAdminUserRole(user.token, selectedUser.id, userRoleDraft, userBrandDraft);
-				if (statusChanged) await updateAdminUserStatus(user.token, selectedUser.id, userStatusDraft);
+				if (roleChanged) await changeAdminUserRole(selectedUser.id, userRoleDraft, userBrandDraft);
+				if (statusChanged) await updateAdminUserStatus(selectedUser.id, userStatusDraft);
 				await loadUsers();
 			},
 			'Пользователь сохранён.',
@@ -915,7 +922,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		await runAction(
 			`bulk-users-${operation}`,
 			async () => {
-				await bulkAdminUsers(user.token, selectedUserIds, operation);
+				await bulkAdminUsers(selectedUserIds, operation);
 				setSelectedUserIds([]);
 				await loadUsers();
 			},
@@ -929,7 +936,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		await runAction(
 			'delete-user',
 			async () => {
-				await bulkAdminUsers(user.token, [selectedUser.id], 'delete');
+				await bulkAdminUsers([selectedUser.id], 'delete');
 				setSelectedUserId(null);
 				await loadUsers();
 			},
@@ -939,7 +946,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 
 	async function handleOpenOrder(orderId: string) {
 		await runAction('load-order', async () => {
-			const detail = await getOrder(user.token, orderId);
+			const detail = await getOrder(orderId);
 			setSelectedOrderId(orderId);
 			setOrdersPage((current) =>
 				current
@@ -957,7 +964,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		await runAction(
 			'save-order-status',
 			async () => {
-				await updateOrderStatus(user.token, selectedOrderId, orderStatusDraft);
+				await updateOrderStatus(selectedOrderId, orderStatusDraft);
 				await loadOrders();
 			},
 			'Статус заказа обновлен.',
@@ -968,7 +975,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		await runAction(
 			'save-template',
 			async () => {
-				await createTemplate(user.token, templateForm);
+				await createTemplate(templateForm);
 				await loadNotificationsData();
 				setTemplateForm(emptyTemplateForm);
 			},
@@ -980,7 +987,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		await runAction(
 			'send-bulk-email',
 			async () => {
-				await sendBulkEmail(user.token, bulkEmailForm);
+				await sendBulkEmail(bulkEmailForm);
 				await loadNotificationsData();
 				setBulkEmailForm(emptyBulkEmailForm);
 			},
@@ -992,7 +999,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		await runAction(
 			'send-system-notification',
 			async () => {
-				await sendSystemNotification(user.token, systemNotificationForm);
+				await sendSystemNotification(systemNotificationForm);
 				await loadDashboardData();
 				setSystemNotificationForm(emptySystemNotificationForm);
 			},
@@ -1000,19 +1007,67 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		);
 	}
 
+	async function waitForImport(operationId: string): Promise<VendorImportStatus> {
+		const deadline = Date.now() + 2 * 60 * 60 * 1000;
+
+		while (true) {
+			await new Promise((resolve) => setTimeout(resolve, 2000));
+			const status = await getImportStatus();
+			setImportStatus(status);
+
+			if (status.operationId && status.operationId !== operationId) {
+				if (!status.isRunning) {
+					throw new Error('Статус импорта изменился. Обновите страницу.');
+				}
+				continue;
+			}
+
+			if (!status.isRunning) {
+				return status;
+			}
+
+			if (Date.now() > deadline) {
+				throw new Error('Импорт выполняется слишком долго. Проверьте статус позже.');
+			}
+		}
+	}
+
+	function importStatusError(status: VendorImportStatus): string | null {
+		if (status.state === 'failed') {
+			return status.lastError || 'Импорт завершился с ошибкой. Подробности — в логах сервера.';
+		}
+
+		if (status.state === 'completed_with_errors') {
+			const vendors = status.failedVendorKeys.length > 0
+				? `: ${status.failedVendorKeys.join(', ')}`
+				: '';
+			return `Импорт завершён с ошибками${vendors}. Подробности — в логах сервера.`;
+		}
+
+		return null;
+	}
+
+	async function reloadAfterImport() {
+		await Promise.all([
+			loadProducts(),
+			loadBrandsData(),
+			loadCategoriesData(),
+			loadCurrenciesData(),
+			loadDashboardData(),
+			loadImportsData(),
+		]);
+	}
+
 	async function handleImportVendor(vendor: string) {
 		await runAction(
 			`import-${vendor}`,
 			async () => {
-				await importVendor(user.token, vendor);
-				await Promise.all([
-					loadProducts(),
-					loadBrandsData(),
-					loadCategoriesData(),
-					loadCurrenciesData(),
-					loadDashboardData(),
-					loadImportsData(),
-				]);
+				const accepted = await importVendor(vendor);
+				const finalStatus = await waitForImport(accepted.operationId);
+				await reloadAfterImport();
+
+				const error = importStatusError(finalStatus);
+				if (error) throw new Error(error);
 			},
 			`Импорт ${vendor} завершен.`,
 		);
@@ -1022,15 +1077,12 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		await runAction(
 			'import-all',
 			async () => {
-				await importAllVendors(user.token);
-				await Promise.all([
-					loadProducts(),
-					loadBrandsData(),
-					loadCategoriesData(),
-					loadCurrenciesData(),
-					loadDashboardData(),
-					loadImportsData(),
-				]);
+				const accepted = await importAllVendors();
+				const finalStatus = await waitForImport(accepted.operationId);
+				await reloadAfterImport();
+
+				const error = importStatusError(finalStatus);
+				if (error) throw new Error(error);
 			},
 			'Импорт всех поставщиков завершен.',
 		);
@@ -1038,7 +1090,7 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 
 	async function handleDownloadReport(type: 'users' | 'orders') {
 		await runAction(`report-${type}`, async () => {
-			const blob = await downloadReport(user.token, type);
+			const blob = await downloadReport(type);
 			downloadBlob(blob, `${type}-report.xlsx`);
 		});
 	}
@@ -1078,6 +1130,8 @@ export function useAdminPanelState(user: AuthenticatedUser) {
 		setVendors,
 		vendorHealth,
 		setVendorHealth,
+		importStatus,
+		setImportStatus,
 		productDetails,
 		setProductDetails,
 		selectedProductId,

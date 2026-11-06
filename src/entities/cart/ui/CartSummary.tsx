@@ -8,12 +8,12 @@ import { toast } from 'sonner';
 
 interface Props {
     items: CartItemType[];
-    token: string;
+
     companyName?: string | null;
     inn?: string | null;
 }
 
-export default function CartSummary({ items, token, companyName, inn }: Props) {
+export default function CartSummary({ items, companyName, inn }: Props) {
     const [isPending, startTransition] = useTransition();
     const { fetchCart } = useCartStore();
     const totalLabel = formatCartTotal(items);
@@ -27,8 +27,8 @@ export default function CartSummary({ items, token, companyName, inn }: Props) {
     const handleCheckout = () => {
         startTransition(async () => {
             try {
-                const newOrder = await createOrderFromCart(token);
-                await fetchCart(token);
+                const newOrder = await createOrderFromCart();
+                await fetchCart();
                 toast.success(`Заказ №${newOrder.orderNumber} успешно создан!`);
                 window.location.href = '/orders';
             } catch (error) {

@@ -10,7 +10,7 @@ export const metadata = {
 export default async function AdminPage() {
 	const user = await getUserFromCookie();
 
-	if (!user?.token) {
+	if (!user) {
 		redirect('/auth/login');
 	}
 
@@ -18,5 +18,5 @@ export default async function AdminPage() {
 		redirect('/');
 	}
 
-	return <AdminPageClient user={user as typeof user & { token: string }} />;
+	return <AdminPageClient user={user} />;
 }

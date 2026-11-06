@@ -85,7 +85,7 @@ function StepTitle({ n, title, optional }: { n: number; title: string; optional?
     );
 }
 
-export function NewProductForm({ token }: { token: string }) {
+export function NewProductForm() {
     const router = useRouter();
 
     const [brands, setBrands] = useState<Brand[]>([]);
@@ -115,9 +115,9 @@ export function NewProductForm({ token }: { token: string }) {
         (async () => {
             try {
                 const [brandPage, categoryTree, currencyPage] = await Promise.all([
-                    getBrands(token, { page: 1, pageSize: 500 }),
-                    getCategories(token),
-                    getCurrencies(token, { page: 1, pageSize: 50 }),
+                    getBrands({ page: 1, pageSize: 500 }),
+                    getCategories(),
+                    getCurrencies({ page: 1, pageSize: 50 }),
                 ]);
                 if (cancelled) return;
                 setBrands(brandPage.items);
@@ -133,7 +133,7 @@ export function NewProductForm({ token }: { token: string }) {
         return () => {
             cancelled = true;
         };
-    }, [token]);
+    }, []);
 
     const categoryById = useMemo(() => new Map(categoryOptions.map((c) => [c.id, c])), [categoryOptions]);
 
@@ -178,7 +178,7 @@ export function NewProductForm({ token }: { token: string }) {
         const q = templateQuery.trim();
         if (!q) return;
         try {
-            const page = await getProducts(token, { searchQuery: q, page: 1, pageSize: 6 });
+            const page = await getProducts({ searchQuery: q, page: 1, pageSize: 6 });
             setTemplateResults(page.items);
             if (page.items.length === 0) toast.info('Похожие товары не найдены');
         } catch {
@@ -188,7 +188,7 @@ export function NewProductForm({ token }: { token: string }) {
 
     async function applyTemplate(productId: string) {
         try {
-            const p = await getProduct(token, productId);
+            const p = await getProduct(productId);
             setName(p.name);
             setBrandId(p.brand?.id ?? '');
             setSku('');
@@ -216,7 +216,7 @@ export function NewProductForm({ token }: { token: string }) {
         setSaving(true);
         let createdId: string | null = null;
         try {
-            const product = await createProduct(token, {
+            const product = await createProduct({
                 name: name.trim(),
                 sku: sku.trim() || null,
                 brandId,
@@ -229,10 +229,10 @@ export function NewProductForm({ token }: { token: string }) {
             createdId = product.id;
 
             for (const [index, imageUrl] of photos.entries()) {
-                await saveProductImage(token, product.id, { imageUrl, isMain: index === 0, sortOrder: index });
+                await saveProductImage(product.id, { imageUrl, isMain: index === 0, sortOrder: index });
             }
             if (description.trim()) {
-                await saveProductDescription(token, product.id, {
+                await saveProductDescription(product.id, {
                     type: DESCRIPTION_FULL,
                     content: description.trim(),
                     sortOrder: 0,
@@ -240,7 +240,7 @@ export function NewProductForm({ token }: { token: string }) {
             }
             const filledSpecs = specs.filter((row) => row.key.trim() && row.value.trim());
             for (const [index, row] of filledSpecs.entries()) {
-                await saveProductCharacteristic(token, product.id, {
+                await saveProductCharacteristic(product.id, {
                     name: row.key.trim(),
                     value: row.value.trim(),
                     unit: null,

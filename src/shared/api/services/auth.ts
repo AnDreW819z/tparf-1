@@ -1,19 +1,5 @@
 import { api } from '@/shared/api/axios';
 
-export type LoginPayload = { email: string; password: string };
-export type LoginResponse = { token: string };
-
-export type RegisterPayload = {
-    email: string;
-    password: string;
-    companyName: string;
-    inn: string;
-};
-
-export type RegisterResponse = {
-    token: string;
-};
-
 export type ConfirmEmailResponse = {
     message: string;
 };
@@ -43,13 +29,13 @@ export type CartResponse = {
     createdAt: string;
 };
 
-export async function login(payload: LoginPayload): Promise<LoginResponse> {
-    const { data } = await api.post<LoginResponse>('auth/login', payload);
-    return data;
-}
-
-export async function register(payload: RegisterPayload): Promise<RegisterResponse> {
-    const { data } = await api.post<RegisterResponse>('auth/register', payload);
+export async function resendConfirmation(email: string): Promise<{ message: string }> {
+    // SMTP может отвечать дольше обычного — даём этому запросу больше времени.
+    const { data } = await api.post<{ message: string }>(
+        'auth/resend-confirmation',
+        { email },
+        { timeout: 30000 }
+    );
     return data;
 }
 
@@ -70,13 +56,6 @@ export async function confirmEmailByCode(code: string): Promise<ConfirmEmailResp
     return data;
 }
 
-export async function getCart(token: string): Promise<CartResponse> {
-    const { data } = await api.get<CartResponse>('cart', {
-        headers: { Authorization: `Bearer ${token}` },
-    });
-    return data;
-}
-
 export type User = {
     id: string;
     email: string;
@@ -89,14 +68,9 @@ export type User = {
     brandIds: string[];
 };
 
-export type UserWithToken = User & {
-    token: string;
-};
-
-export async function fetchMeServer(token: string): Promise<User> {
-    const { data } = await api.get<User>('auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+/** Клиентский запрос: BFF-прокси сам добавит Authorization из HttpOnly-cookie. */
+export async function fetchMe(): Promise<User> {
+    const { data } = await api.get<User>('auth/me');
     return data;
 }
 

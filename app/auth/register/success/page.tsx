@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ResendConfirmationButton } from '@/widgets/auth/ui/ResendConfirmationButton';
 
 export const metadata = {
     title: 'Регистрация завершена',
@@ -33,6 +34,7 @@ export default async function RegisterSuccessPage({ searchParams }: RegisterSucc
                     <div className="mt-2 text-[12.5px] text-[#999]">
                         Не пришло письмо? Проверьте папку «Спам» или подождите несколько минут.
                     </div>
+                    {email ? <ResendConfirmationButton email={email} /> : null}
                     <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                         <Link
                             href="/auth/login"

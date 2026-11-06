@@ -2,50 +2,42 @@
 import { api } from '@/shared/api/axios';
 import type { CartResponse } from '@/shared/store/useCartStore';
 
-// GET /cart — получить корзину (требует токен)
-export async function getCart(token: string): Promise<CartResponse> {
-    const { data } = await api.get<CartResponse>('cart', {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+/**
+ * На сервере (SSR) токен передаётся явно. В браузере он не нужен:
+ * BFF-прокси добавит Authorization из HttpOnly-cookie.
+ */
+function authConfig(token?: string) {
+    return token ? { headers: { Authorization: `Bearer ${token}` } } : undefined;
+}
+
+// GET /cart — получить корзину
+export async function getCart(token?: string): Promise<CartResponse> {
+    const { data } = await api.get<CartResponse>('cart', authConfig(token));
     return data;
 }
 
 // POST /cart/items — добавить товар в корзину
 export async function addToCart(
-    token: string,
     productId: string,
-    quantity: number
+    quantity: number,
+    token?: string
 ): Promise<void> {
-    await api.post(
-        'cart/items',
-        { productId, quantity },
-        {
-            headers: { Authorization: `Bearer ${token}` },
-        }
-    );
+    await api.post('cart/items', { productId, quantity }, authConfig(token));
 }
 
 // PUT /cart/items/{productId} — изменить количество товара в корзине
 export async function updateCartItem(
-    token: string,
     productId: string,
-    quantity: number
+    quantity: number,
+    token?: string
 ): Promise<void> {
-    await api.put(
-        `cart/items/${productId}`,
-        { quantity },
-        {
-            headers: { Authorization: `Bearer ${token}` },
-        }
-    );
+    await api.put(`cart/items/${productId}`, { quantity }, authConfig(token));
 }
 
 // DELETE /cart/items/{productId} — удалить товар из корзины
 export async function removeFromCart(
-    token: string,
-    productId: string
+    productId: string,
+    token?: string
 ): Promise<void> {
-    await api.delete(`cart/items/${productId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    await api.delete(`cart/items/${productId}`, authConfig(token));
 }

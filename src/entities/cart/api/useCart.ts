@@ -12,16 +12,16 @@ export const cartKeys = {
 };
 
 /**
- * Хук для получения корзины с кэшированием
+ * Хук для получения корзины с кэшированием.
+ * Авторизация берётся из HttpOnly-cookie на стороне BFF-прокси.
  */
-export function useCart(token: string) {
+export function useCart() {
     return useQuery({
         queryKey: cartKeys.detail('current'),
-        queryFn: () => getCart(token),
+        queryFn: () => getCart(),
         staleTime: 2 * 60 * 1000, // 2 минуты
         gcTime: 5 * 60 * 1000, // 5 минут
         retry: 1,
-        enabled: !!token,
     });
 }
 
@@ -32,8 +32,8 @@ export function useAddToCart() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ token, productId, quantity }: { token: string; productId: string; quantity: number }) =>
-            addToCartApi(token, productId, quantity),
+        mutationFn: ({ productId, quantity }: { productId: string; quantity: number }) =>
+            addToCartApi(productId, quantity),
         onSuccess: () => {
             // Инвалидация кэша корзины для перезагрузки
             queryClient.invalidateQueries({ queryKey: cartKeys.all });
@@ -48,8 +48,8 @@ export function useUpdateCartItem() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ token, productId, quantity }: { token: string; productId: string; quantity: number }) =>
-            updateCartItemApi(token, productId, quantity),
+        mutationFn: ({ productId, quantity }: { productId: string; quantity: number }) =>
+            updateCartItemApi(productId, quantity),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: cartKeys.all });
         },
@@ -63,8 +63,8 @@ export function useRemoveFromCart() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ token, productId }: { token: string; productId: string }) =>
-            removeFromCartApi(token, productId),
+        mutationFn: ({ productId }: { productId: string }) =>
+            removeFromCartApi(productId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: cartKeys.all });
         },

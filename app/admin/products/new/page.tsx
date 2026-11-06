@@ -7,8 +7,8 @@ export const metadata = { title: 'Новый товар' };
 
 export default async function NewProductPage() {
     const user = await getUserFromCookie();
-    if (!user?.token) redirect('/auth/login');
+    if (!user) redirect('/auth/login');
     if (!canAccessAdminPanel(user)) redirect('/');
 
-    return <NewProductForm token={user.token} />;
+    return <NewProductForm />;
 }

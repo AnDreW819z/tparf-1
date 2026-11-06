@@ -8,17 +8,12 @@ import CartItemsList from '@/entities/cart/ui/CartItemsList';
 import CartSummary from '@/entities/cart/ui/CartSummary';
 import Link from 'next/link';
 
-interface UserWithToken extends User {
-    token: string;
-}
-
 interface CartPageClientProps {
     cart: CartResponse;
-    user: UserWithToken;
+    user: User;
 }
 
 export default function CartPageClient({ cart, user }: CartPageClientProps) {
-    const token = user.token;
     const setCart = useCartStore((state) => state.setCart);
     const cartState = useCartStore((state) => state.cart);
 
@@ -51,8 +46,8 @@ export default function CartPageClient({ cart, user }: CartPageClientProps) {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
-                    <CartItemsList items={currentCart.items} token={token} />
-                    <CartSummary items={currentCart.items} token={token} companyName={user.companyName} inn={user.inn} />
+                    <CartItemsList items={currentCart.items} />
+                    <CartSummary items={currentCart.items} companyName={user.companyName} inn={user.inn} />
                 </div>
             )}
         </section>

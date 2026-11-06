@@ -39,9 +39,9 @@ type CartState = {
     error: string | null;
 
     setCart: (cart: CartResponse) => void;
-    fetchCart: (token: string) => Promise<void>;
-    removeItem: (token: string, productId: string) => Promise<void>;
-    updateQuantity: (token: string, productId: string, quantity: number) => Promise<void>;
+    fetchCart: () => Promise<void>;
+    removeItem: (productId: string) => Promise<void>;
+    updateQuantity: (productId: string, quantity: number) => Promise<void>;
 };
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -51,10 +51,10 @@ export const useCartStore = create<CartState>((set, get) => ({
 
     setCart: (cart) => set({ cart }),
 
-    fetchCart: async (token) => {
+    fetchCart: async () => {
         set({ loading: true, error: null });
         try {
-            const cart = await getCart(token);
+            const cart = await getCart();
             set({ cart, loading: false });
         } catch (error: unknown) {
             set({
@@ -65,7 +65,7 @@ export const useCartStore = create<CartState>((set, get) => ({
     },
 
     // ✅ Оптимистичное обновление с синхронизацией на сервере
-    removeItem: async (token, productId) => {
+    removeItem: async (productId) => {
         const { cart } = get();
         if (!cart) return;
 
@@ -89,7 +89,7 @@ export const useCartStore = create<CartState>((set, get) => ({
 
         // Запрос к API
         try {
-            await removeFromCartApi(token, productId);
+            await removeFromCartApi(productId);
         } catch (error) {
             // Откат при ошибке
             set({ cart: previousCart });
@@ -97,7 +97,7 @@ export const useCartStore = create<CartState>((set, get) => ({
         }
     },
 
-    updateQuantity: async (token, productId, quantity) => {
+    updateQuantity: async (productId, quantity) => {
         const { cart } = get();
         if (!cart) return;
 
@@ -127,7 +127,7 @@ export const useCartStore = create<CartState>((set, get) => ({
 
         // Запрос к API
         try {
-            await updateCartItemApi(token, productId, quantity);
+            await updateCartItemApi(productId, quantity);
         } catch (error) {
             // Откат при ошибке
             set({ cart: previousCart });

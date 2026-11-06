@@ -4,7 +4,7 @@ import { ProductGallery } from '@/entities/product/ui/ProductGallery';
 import { ProductInfoClient } from '@/entities/product/ui/ProductInfoClient';
 import { getCart } from '@/shared/api/services/cart';
 import { fetchProductById } from '@/shared/api/services/product';
-import { getUserFromCookie } from '@/shared/server/auth';
+import { getAuthToken, getUserFromCookie } from '@/shared/server/auth';
 import { Breadcrumbs } from '@/widgets/breadcrumbs/ui/Breadcrumbs';
 
 export const revalidate = 300;
@@ -38,15 +38,18 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     }
 
     const user = await getUserFromCookie();
-    if (user?.token) {
-        try {
-            const cart = await getCart(user.token);
-            const cartItem = cart.items.find((item) => item.productId === id);
-            initialCartInfo = cartItem
-                ? { inCart: true, quantity: cartItem.quantity }
-                : { inCart: false, quantity: 0 };
-        } catch (error) {
-            console.error('Ошибка загрузки корзины:', error);
+    if (user) {
+        const token = await getAuthToken();
+        if (token) {
+            try {
+                const cart = await getCart(token);
+                const cartItem = cart.items.find((item) => item.productId === id);
+                initialCartInfo = cartItem
+                    ? { inCart: true, quantity: cartItem.quantity }
+                    : { inCart: false, quantity: 0 };
+            } catch (error) {
+                console.error('Ошибка загрузки корзины:', error);
+            }
         }
     }
 

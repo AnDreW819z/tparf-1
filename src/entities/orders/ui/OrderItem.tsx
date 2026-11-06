@@ -10,7 +10,7 @@ import { formatProductPrice, isRequestPrice } from '@/shared/lib/price';
 
 interface OrderItemProps {
     order: Order;
-    token: string;
+
 }
 
 export const ORDER_STATUS: Record<number, { label: string; bg: string; fg: string }> = {
@@ -30,7 +30,7 @@ function pluralizeLines(count: number) {
     return 'позиций';
 }
 
-export default function OrderItem({ order, token }: OrderItemProps) {
+export default function OrderItem({ order }: OrderItemProps) {
     const router = useRouter();
     const [isExpanded, setIsExpanded] = useState(false);
     const [isPending, startTransition] = useTransition();
@@ -43,7 +43,7 @@ export default function OrderItem({ order, token }: OrderItemProps) {
         if (!window.confirm(`Отменить заказ ${order.orderNumber}?`)) return;
         startTransition(async () => {
             try {
-                await cancelOrder(token, order.id);
+                await cancelOrder(order.id);
                 toast.success('Заказ отменён');
                 router.refresh();
             } catch {

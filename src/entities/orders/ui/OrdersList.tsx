@@ -5,10 +5,10 @@ import OrderItem from './OrderItem';
 
 interface OrdersListProps {
     orders: Order[];
-    token: string;
+
 }
 
-export default function OrdersList({ orders, token }: OrdersListProps) {
+export default function OrdersList({ orders }: OrdersListProps) {
     return (
         <div className="overflow-hidden rounded-md border border-[var(--line)]">
             <div className="hidden gap-6 border-b border-[var(--line)] bg-[var(--surface)] px-5 py-3 text-[13px] text-[var(--muted)] md:flex">
@@ -20,7 +20,7 @@ export default function OrdersList({ orders, token }: OrdersListProps) {
                 <span className="w-[18px] flex-none" />
             </div>
             {orders.map((order) => (
-                <OrderItem key={order.id} order={order} token={token} />
+                <OrderItem key={order.id} order={order} />
             ))}
         </div>
     );
