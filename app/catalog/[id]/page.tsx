@@ -57,9 +57,11 @@ export default async function CategoryByIdPage({ params, searchParams }: Catalog
     const page = Number(resolvedSearchParams.Page ?? 1);
     const pageSize = Number(resolvedSearchParams.PageSize ?? 20);
 
-    // Товары с уровня 1 и выше
+    // Товары показываем для вложенных категорий и для корневых,
+    // у которых нет подкатегорий (например, «Электротранспорт и аккумуляторы»).
+    const hasProducts = node.level >= 1 || node.children.length === 0;
     let productsData = null as Awaited<ReturnType<typeof fetchProductsByCategoryId>> | null;
-    if (node.level >= 1) {
+    if (hasProducts) {
         productsData = await fetchProductsByCategoryId(node.id, { page, pageSize });
     }
     const productItems =
@@ -74,7 +76,6 @@ export default async function CategoryByIdPage({ params, searchParams }: Catalog
         })) ?? [];
 
     const totalCount = productsData?.totalCount ?? 0;
-    const hasProducts = node.level >= 1;
 
     return (
         <section className="px-7 pb-16 pt-7">
